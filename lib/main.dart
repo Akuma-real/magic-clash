@@ -12,7 +12,7 @@ void main() async {
     await windowManager.ensureInitialized();
     await windowManager.setMinimumSize(const Size(400, 600));
     await windowManager.setSize(const Size(900, 700));
-    await windowManager.setTitle('Mihomo Valdi');
+    await windowManager.setTitle('Magic Clash');
   }
 
   runApp(const App());

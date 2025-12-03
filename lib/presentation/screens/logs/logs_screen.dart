@@ -70,9 +70,13 @@ class _LogsScreenState extends State<LogsScreen> {
         actions: [
           DropdownButton<String>(
             value: _filter,
-            items: ['all', 'debug', 'info', 'warning', 'error']
-                .map((l) => DropdownMenuItem(value: l, child: Text(l)))
-                .toList(),
+            items: [
+              'all',
+              'debug',
+              'info',
+              'warning',
+              'error',
+            ].map((l) => DropdownMenuItem(value: l, child: Text(l))).toList(),
             onChanged: (v) {
               if (v != null) setState(() => _filter = v);
             },
@@ -84,7 +88,8 @@ class _LogsScreenState extends State<LogsScreen> {
           IconButton(
             icon: Icon(_showProcessLogs ? Icons.terminal : Icons.article),
             tooltip: _showProcessLogs ? '显示 API 日志' : '显示进程日志',
-            onPressed: () => setState(() => _showProcessLogs = !_showProcessLogs),
+            onPressed: () =>
+                setState(() => _showProcessLogs = !_showProcessLogs),
           ),
         ],
       ),
@@ -100,7 +105,7 @@ class _LogsScreenState extends State<LogsScreen> {
       itemCount: logs.length,
       itemBuilder: (context, index) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        child: Text(
+        child: SelectableText(
           logs[index],
           style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
         ),
@@ -117,7 +122,7 @@ class _LogsScreenState extends State<LogsScreen> {
         final log = logs[index];
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          child: Text.rich(
+          child: SelectableText.rich(
             TextSpan(
               children: [
                 TextSpan(

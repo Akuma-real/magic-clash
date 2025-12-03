@@ -55,9 +55,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _latestVersion = version.tagName;
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('检查更新失败: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('检查更新失败: $e')));
       }
     }
     setState(() => _checkingUpdate = false);
@@ -71,24 +71,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final version = await _coreRepository.getLatestVersion();
       final corePath = await PlatformInterface.instance.getCorePath();
-      await _coreRepository.downloadCore(
-        version,
-        corePath,
-        (received, total) {
-          setState(() => _downloadProgress = received / total);
-        },
-      );
+      await _coreRepository.downloadCore(version, corePath, (received, total) {
+        setState(() => _downloadProgress = received / total);
+      });
       _currentVersion = version.tagName;
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('更新完成')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('更新完成')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('下载失败: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('下载失败: $e')));
       }
     }
     setState(() => _downloading = false);
@@ -142,18 +138,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: DropdownButton<ThemeMode>(
               value: _themeMode,
               items: const [
-                DropdownMenuItem(
-                  value: ThemeMode.system,
-                  child: Text('跟随系统'),
-                ),
-                DropdownMenuItem(
-                  value: ThemeMode.light,
-                  child: Text('浅色'),
-                ),
-                DropdownMenuItem(
-                  value: ThemeMode.dark,
-                  child: Text('深色'),
-                ),
+                DropdownMenuItem(value: ThemeMode.system, child: Text('跟随系统')),
+                DropdownMenuItem(value: ThemeMode.light, child: Text('浅色')),
+                DropdownMenuItem(value: ThemeMode.dark, child: Text('深色')),
               ],
               onChanged: (mode) {
                 if (mode != null) _setThemeMode(mode);
@@ -164,7 +151,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: const Icon(Icons.info),
             title: const Text('关于'),
-            subtitle: const Text('Mihomo Valdi v1.0.0'),
+            subtitle: const Text('Magic Clash v1.0.0'),
           ),
         ],
       ),

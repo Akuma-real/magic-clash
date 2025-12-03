@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.mihomo" "\0"
-            VALUE "FileDescription", "mihomo_valdi" "\0"
+            VALUE "CompanyName", "com.magicclash" "\0"
+            VALUE "FileDescription", "Magic Clash" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "mihomo_valdi" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2025 com.mihomo. All rights reserved." "\0"
-            VALUE "OriginalFilename", "mihomo_valdi.exe" "\0"
-            VALUE "ProductName", "mihomo_valdi" "\0"
+            VALUE "InternalName", "magic_clash" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2025 com.magicclash. All rights reserved." "\0"
+            VALUE "OriginalFilename", "magic_clash.exe" "\0"
+            VALUE "ProductName", "Magic Clash" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

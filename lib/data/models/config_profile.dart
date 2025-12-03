@@ -24,14 +24,18 @@ class ConfigProfile {
       _$ConfigProfileFromJson(json);
   Map<String, dynamic> toJson() => _$ConfigProfileToJson(this);
 
-  ConfigProfile copyWith({DateTime? updatedAt}) => ConfigProfile(
-        id: id,
-        name: name,
-        fileName: fileName,
-        sourceUrl: sourceUrl,
-        createdAt: createdAt,
-        updatedAt: updatedAt ?? this.updatedAt,
-      );
+  ConfigProfile copyWith({
+    String? name,
+    String? sourceUrl,
+    DateTime? updatedAt,
+  }) => ConfigProfile(
+    id: id,
+    name: name ?? this.name,
+    fileName: fileName,
+    sourceUrl: sourceUrl ?? this.sourceUrl,
+    createdAt: createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
 
   bool get isSubscription => sourceUrl != null;
 }

@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
 
     <application
-        android:label="Mihomo Valdi"
+        android:label="Magic Clash"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -27,7 +27,7 @@
         </activity>
 
         <service
-            android:name=".MihomoVpnService"
+            android:name=".MagicClashVpnService"
             android:exported="false"
             android:permission="android.permission.BIND_VPN_SERVICE"
             android:foregroundServiceType="specialUse">

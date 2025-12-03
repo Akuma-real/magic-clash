@@ -1,4 +1,4 @@
-package com.mihomo.mihomo_valdi
+package com.magicclash.magic_clash
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -14,11 +14,11 @@ import java.net.InetSocketAddress
 import java.net.Socket
 import java.util.concurrent.atomic.AtomicBoolean
 
-class MihomoVpnService : VpnService() {
+class MagicClashVpnService : VpnService() {
     companion object {
-        const val ACTION_START = "com.mihomo.mihomo_valdi.START"
-        const val ACTION_STOP = "com.mihomo.mihomo_valdi.STOP"
-        private const val CHANNEL_ID = "mihomo_vpn_channel"
+        const val ACTION_START = "com.magicclash.magic_clash.START"
+        const val ACTION_STOP = "com.magicclash.magic_clash.STOP"
+        private const val CHANNEL_ID = "magic_clash_vpn_channel"
         private const val NOTIFICATION_ID = 1
     }
 
@@ -44,7 +44,7 @@ class MihomoVpnService : VpnService() {
         startForeground(NOTIFICATION_ID, createNotification())
 
         val builder = Builder()
-            .setSession("Mihomo VPN")
+            .setSession("Magic Clash VPN")
             .addAddress("10.0.0.2", 24)
             .addRoute("0.0.0.0", 0)
             .addDnsServer("8.8.8.8")
@@ -96,7 +96,7 @@ class MihomoVpnService : VpnService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Mihomo VPN",
+                "Magic Clash VPN",
                 NotificationManager.IMPORTANCE_LOW
             )
             val manager = getSystemService(NotificationManager::class.java)
@@ -113,7 +113,7 @@ class MihomoVpnService : VpnService() {
 
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Notification.Builder(this, CHANNEL_ID)
-                .setContentTitle("Mihomo VPN")
+                .setContentTitle("Magic Clash VPN")
                 .setContentText("VPN is running")
                 .setSmallIcon(android.R.drawable.ic_lock_lock)
                 .setContentIntent(pendingIntent)
@@ -121,7 +121,7 @@ class MihomoVpnService : VpnService() {
         } else {
             @Suppress("DEPRECATION")
             Notification.Builder(this)
-                .setContentTitle("Mihomo VPN")
+                .setContentTitle("Magic Clash VPN")
                 .setContentText("VPN is running")
                 .setSmallIcon(android.R.drawable.ic_lock_lock)
                 .setContentIntent(pendingIntent)

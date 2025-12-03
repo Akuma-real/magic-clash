@@ -169,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final isRunning = _coreManager.status == CoreStatus.running;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mihomo Valdi')),
+      appBar: AppBar(title: const Text('Magic Clash')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

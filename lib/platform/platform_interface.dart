@@ -44,12 +44,24 @@ class WindowsPlatform implements PlatformInterface {
     await Process.run('reg', [
       'add',
       r'HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings',
-      '/v', 'ProxyEnable', '/t', 'REG_DWORD', '/d', '1', '/f'
+      '/v',
+      'ProxyEnable',
+      '/t',
+      'REG_DWORD',
+      '/d',
+      '1',
+      '/f',
     ]);
     await Process.run('reg', [
       'add',
       r'HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings',
-      '/v', 'ProxyServer', '/t', 'REG_SZ', '/d', '$host:$port', '/f'
+      '/v',
+      'ProxyServer',
+      '/t',
+      'REG_SZ',
+      '/d',
+      '$host:$port',
+      '/f',
     ]);
   }
 
@@ -58,7 +70,13 @@ class WindowsPlatform implements PlatformInterface {
     await Process.run('reg', [
       'add',
       r'HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings',
-      '/v', 'ProxyEnable', '/t', 'REG_DWORD', '/d', '0', '/f'
+      '/v',
+      'ProxyEnable',
+      '/t',
+      'REG_DWORD',
+      '/d',
+      '0',
+      '/f',
     ]);
   }
 }
@@ -67,25 +85,28 @@ class LinuxPlatform implements PlatformInterface {
   @override
   Future<String> getCorePath() async {
     final home = Platform.environment['HOME'] ?? '/tmp';
-    return p.join(home, '.local', 'share', 'mihomo-valdi', 'mihomo');
+    return p.join(home, '.local', 'share', 'magic-clash', 'mihomo');
   }
 
   @override
   Future<String> getConfigDirectory() async {
     final home = Platform.environment['HOME'] ?? '/tmp';
-    return p.join(home, '.config', 'mihomo-valdi', 'configs');
+    return p.join(home, '.config', 'magic-clash', 'configs');
   }
 
   @override
   Future<String> getLogDirectory() async {
     final home = Platform.environment['HOME'] ?? '/tmp';
-    return p.join(home, '.local', 'share', 'mihomo-valdi', 'logs');
+    return p.join(home, '.local', 'share', 'magic-clash', 'logs');
   }
 
   @override
   Future<void> setSystemProxy(String host, int port) async {
-    final desktop = Platform.environment['XDG_CURRENT_DESKTOP']?.toLowerCase() ?? '';
-    if (desktop.contains('gnome') || desktop.contains('unity') || desktop.contains('cinnamon')) {
+    final desktop =
+        Platform.environment['XDG_CURRENT_DESKTOP']?.toLowerCase() ?? '';
+    if (desktop.contains('gnome') ||
+        desktop.contains('unity') ||
+        desktop.contains('cinnamon')) {
       await _setGnomeProxy(host, port);
     } else if (desktop.contains('kde') || desktop.contains('plasma')) {
       await _setKdeProxy(host, port);
@@ -114,9 +135,13 @@ class LinuxPlatform implements PlatformInterface {
 
   Future<void> _setKdeProxy(String host, int port) async {
     final result = await Process.run('kwriteconfig5', [
-      '--file', 'kioslaverc',
-      '--group', 'Proxy Settings',
-      '--key', 'ProxyType', '1',
+      '--file',
+      'kioslaverc',
+      '--group',
+      'Proxy Settings',
+      '--key',
+      'ProxyType',
+      '1',
     ]);
     if (result.exitCode != 0) {
       log('KDE proxy setup failed: ${result.stderr}', name: 'Platform');
@@ -125,21 +150,33 @@ class LinuxPlatform implements PlatformInterface {
 
   @override
   Future<void> clearSystemProxy() async {
-    final desktop = Platform.environment['XDG_CURRENT_DESKTOP']?.toLowerCase() ?? '';
-    if (desktop.contains('gnome') || desktop.contains('unity') || desktop.contains('cinnamon')) {
-      await Process.run('gsettings', ['set', 'org.gnome.system.proxy', 'mode', 'none']);
+    final desktop =
+        Platform.environment['XDG_CURRENT_DESKTOP']?.toLowerCase() ?? '';
+    if (desktop.contains('gnome') ||
+        desktop.contains('unity') ||
+        desktop.contains('cinnamon')) {
+      await Process.run('gsettings', [
+        'set',
+        'org.gnome.system.proxy',
+        'mode',
+        'none',
+      ]);
     } else if (desktop.contains('kde') || desktop.contains('plasma')) {
       await Process.run('kwriteconfig5', [
-        '--file', 'kioslaverc',
-        '--group', 'Proxy Settings',
-        '--key', 'ProxyType', '0',
+        '--file',
+        'kioslaverc',
+        '--group',
+        'Proxy Settings',
+        '--key',
+        'ProxyType',
+        '0',
       ]);
     }
   }
 }
 
 class AndroidPlatform implements PlatformInterface {
-  static const _channel = MethodChannel('com.mihomo.mihomo_valdi/vpn');
+  static const _channel = MethodChannel('com.magicclash.magic_clash/vpn');
 
   @override
   Future<String> getCorePath() async {
@@ -161,10 +198,7 @@ class AndroidPlatform implements PlatformInterface {
 
   @override
   Future<void> setSystemProxy(String host, int port) async {
-    await _channel.invokeMethod('startVpn', {
-      'host': host,
-      'port': port,
-    });
+    await _channel.invokeMethod('startVpn', {'host': host, 'port': port});
   }
 
   @override

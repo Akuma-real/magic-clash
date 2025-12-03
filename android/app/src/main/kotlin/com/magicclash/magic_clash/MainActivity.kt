@@ -1,4 +1,4 @@
-package com.mihomo.mihomo_valdi
+package com.magicclash.magic_clash
 
 import android.app.Activity
 import android.content.Intent
@@ -8,7 +8,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "com.mihomo.mihomo_valdi/vpn"
+    private val CHANNEL = "com.magicclash.magic_clash/vpn"
     private val VPN_REQUEST_CODE = 1001
     private var pendingResult: MethodChannel.Result? = null
 
@@ -29,8 +29,8 @@ class MainActivity : FlutterActivity() {
                 "startVpn" -> {
                     val host = call.argument<String>("host") ?: "127.0.0.1"
                     val port = call.argument<Int>("port") ?: 7890
-                    val intent = Intent(this, MihomoVpnService::class.java).apply {
-                        action = MihomoVpnService.ACTION_START
+                    val intent = Intent(this, MagicClashVpnService::class.java).apply {
+                        action = MagicClashVpnService.ACTION_START
                         putExtra("host", host)
                         putExtra("port", port)
                     }
@@ -38,8 +38,8 @@ class MainActivity : FlutterActivity() {
                     result.success(true)
                 }
                 "stopVpn" -> {
-                    val intent = Intent(this, MihomoVpnService::class.java).apply {
-                        action = MihomoVpnService.ACTION_STOP
+                    val intent = Intent(this, MagicClashVpnService::class.java).apply {
+                        action = MagicClashVpnService.ACTION_STOP
                     }
                     startService(intent)
                     result.success(true)

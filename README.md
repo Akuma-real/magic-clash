@@ -1,6 +1,6 @@
-# mihomo_valdi
+# Magic Clash
 
-A new Flutter project.
+A cross-platform Mihomo core launcher.
 
 ## Getting Started
 
