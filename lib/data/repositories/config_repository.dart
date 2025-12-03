@@ -15,6 +15,10 @@ class ConfigRepository {
   final _dio = Dio();
   final _uuid = const Uuid();
 
+  String _sanitizeFileName(String name) {
+    return name.replaceAll(RegExp(r'[/\\:*?"<>|.]'), '_');
+  }
+
   Future<List<ConfigProfile>> getProfiles() async {
     final prefs = await SharedPreferences.getInstance();
     final json = prefs.getString(_profilesKey);
@@ -52,11 +56,15 @@ class ConfigRepository {
     final configDir = await PlatformInterface.instance.getConfigDirectory();
     await Directory(configDir).create(recursive: true);
 
-    final response = await _dio.get(url);
-    final content = response.data.toString();
+    final response = await _dio.get<String>(
+      url,
+      options: Options(responseType: ResponseType.plain),
+    );
+    final content = response.data ?? '';
 
     final id = _uuid.v4();
-    final fileName = '${name}_$id.yaml';
+    final safeName = _sanitizeFileName(name);
+    final fileName = '${safeName}_$id.yaml';
     await File('$configDir/$fileName').writeAsString(content);
 
     final profile = ConfigProfile(
@@ -82,7 +90,8 @@ class ConfigRepository {
     final content = await File(sourcePath).readAsString();
 
     final id = _uuid.v4();
-    final fileName = '${name}_$id.yaml';
+    final safeName = _sanitizeFileName(name);
+    final fileName = '${safeName}_$id.yaml';
     await File('$configDir/$fileName').writeAsString(content);
 
     final profile = ConfigProfile(
@@ -128,9 +137,12 @@ class ConfigRepository {
     if (profile.sourceUrl == null) return;
 
     final configDir = await PlatformInterface.instance.getConfigDirectory();
-    final response = await _dio.get(profile.sourceUrl!);
+    final response = await _dio.get<String>(
+      profile.sourceUrl!,
+      options: Options(responseType: ResponseType.plain),
+    );
     await File('$configDir/${profile.fileName}')
-        .writeAsString(response.data.toString());
+        .writeAsString(response.data ?? '');
 
     profiles[index] = profile.copyWith(updatedAt: DateTime.now());
     await _saveProfiles(profiles);

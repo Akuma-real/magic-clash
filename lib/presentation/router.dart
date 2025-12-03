@@ -47,6 +47,10 @@ final router = GoRouter(
         ),
         GoRoute(
           path: '/configs/edit',
+          redirect: (context, state) {
+            if (state.extra is! String) return '/configs';
+            return null;
+          },
           builder: (context, state) => ConfigEditorScreen(
             configId: state.extra as String,
           ),

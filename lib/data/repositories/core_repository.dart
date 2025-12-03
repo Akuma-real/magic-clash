@@ -21,7 +21,7 @@ class CoreRepository {
     String savePath,
     void Function(int received, int total) onProgress,
   ) async {
-    final asset = _selectAsset(version);
+    final asset = await _selectAsset(version);
     if (asset == null) {
       throw Exception('No compatible asset found for this platform');
     }
@@ -41,9 +41,9 @@ class CoreRepository {
     }
   }
 
-  CoreAsset? _selectAsset(CoreVersion version) {
+  Future<CoreAsset?> _selectAsset(CoreVersion version) async {
     final os = _getOs();
-    final arch = _getArch();
+    final arch = await _getArch();
     final pattern = 'mihomo-$os-$arch';
 
     for (final asset in version.assets) {
@@ -61,9 +61,22 @@ class CoreRepository {
     throw UnsupportedError('Unsupported platform');
   }
 
-  String _getArch() {
-    // 简化处理，实际应检测系统架构
+  Future<String> _getArch() async {
     if (Platform.isAndroid) return 'arm64-v8';
+    if (Platform.isLinux) {
+      final result = await Process.run('uname', ['-m']);
+      final arch = result.stdout.toString().trim();
+      return switch (arch) {
+        'x86_64' || 'amd64' => 'amd64',
+        'aarch64' || 'arm64' => 'arm64',
+        'armv7l' => 'armv7',
+        _ => 'amd64',
+      };
+    }
+    if (Platform.isWindows) {
+      final arch = Platform.environment['PROCESSOR_ARCHITECTURE'] ?? '';
+      return arch.contains('ARM') ? 'arm64' : 'amd64';
+    }
     return 'amd64';
   }
 

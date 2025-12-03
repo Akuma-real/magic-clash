@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as dev;
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -26,6 +27,11 @@ class CoreManager extends ChangeNotifier {
   List<String> get processLogs => List.unmodifiable(_processLogs);
   List<LogEntry> get apiLogs => List.unmodifiable(_apiLogs);
 
+  Future<bool> _checkCommand(String cmd) async {
+    final result = await Process.run('which', [cmd]);
+    return result.exitCode == 0;
+  }
+
   Future<void> start(String corePath, String configPath) async {
     if (_status != CoreStatus.stopped) return;
 
@@ -35,15 +41,23 @@ class CoreManager extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 检查是否需要提权 (Linux TUN 模式需要 root 或 cap_net_admin)
-      final needsElevation = Platform.isLinux;
-
-      if (needsElevation) {
-        _process = await Process.start(
-          'pkexec',
-          [corePath, '-f', configPath],
-          mode: ProcessStartMode.normal,
-        );
+      if (Platform.isLinux) {
+        final hasPkexec = await _checkCommand('pkexec');
+        if (hasPkexec) {
+          _process = await Process.start(
+            'pkexec',
+            [corePath, '-f', configPath],
+            mode: ProcessStartMode.normal,
+          );
+        } else {
+          dev.log('pkexec not found, trying direct execution',
+              name: 'CoreManager');
+          _process = await Process.start(
+            corePath,
+            ['-f', configPath],
+            mode: ProcessStartMode.normal,
+          );
+        }
       } else {
         _process = await Process.start(
           corePath,
@@ -93,7 +107,7 @@ class CoreManager extends ChangeNotifier {
       (log) {
         if (_disposed) return;
         _apiLogs.add(log);
-        if (_apiLogs.length > 500) _apiLogs.removeAt(0);
+        if (_apiLogs.length > 5000) _apiLogs.removeAt(0);
         notifyListeners();
       },
     );
@@ -125,6 +139,7 @@ class CoreManager extends ChangeNotifier {
     _disposed = true;
     _stdoutSub?.cancel();
     _stderrSub?.cancel();
+    _apiLogSub?.cancel();
     _process?.kill();
     super.dispose();
   }

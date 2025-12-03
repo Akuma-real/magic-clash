@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:dio/dio.dart';
 
@@ -66,25 +67,37 @@ class MihomoApiService {
   }
 
   Stream<Traffic> trafficStream() async* {
+    final buffer = StringBuffer();
     try {
       final response = await _dio.get<ResponseBody>(
         '$baseUrl/traffic',
         options: Options(responseType: ResponseType.stream),
       );
       await for (final chunk in response.data!.stream) {
-        final lines = utf8.decode(chunk).trim().split('\n');
+        buffer.write(utf8.decode(chunk));
+        final content = buffer.toString();
+        final lines = content.split('\n');
+        buffer.clear();
+        if (!content.endsWith('\n') && lines.isNotEmpty) {
+          buffer.write(lines.removeLast());
+        }
         for (final line in lines) {
-          if (line.isNotEmpty) {
-            yield Traffic.fromJson(jsonDecode(line));
+          if (line.trim().isNotEmpty) {
+            try {
+              yield Traffic.fromJson(jsonDecode(line));
+            } catch (e) {
+              log('Traffic parse error: $e', name: 'MihomoApi');
+            }
           }
         }
       }
-    } catch (_) {
-      // Connection closed, stream ends gracefully
+    } catch (e) {
+      log('Traffic stream error: $e', name: 'MihomoApi');
     }
   }
 
   Stream<LogEntry> logsStream({String level = 'info'}) async* {
+    final buffer = StringBuffer();
     try {
       final response = await _dio.get<ResponseBody>(
         '$baseUrl/logs',
@@ -92,15 +105,25 @@ class MihomoApiService {
         options: Options(responseType: ResponseType.stream),
       );
       await for (final chunk in response.data!.stream) {
-        final lines = utf8.decode(chunk).trim().split('\n');
+        buffer.write(utf8.decode(chunk));
+        final content = buffer.toString();
+        final lines = content.split('\n');
+        buffer.clear();
+        if (!content.endsWith('\n') && lines.isNotEmpty) {
+          buffer.write(lines.removeLast());
+        }
         for (final line in lines) {
-          if (line.isNotEmpty) {
-            yield LogEntry.fromJson(jsonDecode(line));
+          if (line.trim().isNotEmpty) {
+            try {
+              yield LogEntry.fromJson(jsonDecode(line));
+            } catch (e) {
+              log('Log parse error: $e', name: 'MihomoApi');
+            }
           }
         }
       }
-    } catch (_) {
-      // Connection closed, stream ends gracefully
+    } catch (e) {
+      log('Logs stream error: $e', name: 'MihomoApi');
     }
   }
 

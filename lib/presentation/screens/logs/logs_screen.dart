@@ -15,6 +15,7 @@ class _LogsScreenState extends State<LogsScreen> {
   final _scrollController = ScrollController();
   bool _autoScroll = true;
   String _filter = 'all';
+  bool _showProcessLogs = false;
 
   @override
   void initState() {
@@ -80,35 +81,59 @@ class _LogsScreenState extends State<LogsScreen> {
             icon: Icon(_autoScroll ? Icons.lock : Icons.lock_open),
             onPressed: () => setState(() => _autoScroll = !_autoScroll),
           ),
+          IconButton(
+            icon: Icon(_showProcessLogs ? Icons.terminal : Icons.article),
+            tooltip: _showProcessLogs ? '显示 API 日志' : '显示进程日志',
+            onPressed: () => setState(() => _showProcessLogs = !_showProcessLogs),
+          ),
         ],
       ),
-      body: logs.isEmpty
-          ? const Center(child: Text('暂无日志'))
-          : ListView.builder(
-              controller: _scrollController,
-              itemCount: logs.length,
-              itemBuilder: (context, index) {
-                final log = logs[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  child: Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '[${log.type}] ',
-                          style: TextStyle(
-                            color: _getLogColor(log.type),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        TextSpan(text: log.payload),
-                      ],
-                    ),
-                    style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+      body: _showProcessLogs ? _buildProcessLogs() : _buildApiLogs(logs),
+    );
+  }
+
+  Widget _buildProcessLogs() {
+    final logs = _coreManager.processLogs;
+    if (logs.isEmpty) return const Center(child: Text('暂无进程日志'));
+    return ListView.builder(
+      controller: _scrollController,
+      itemCount: logs.length,
+      itemBuilder: (context, index) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        child: Text(
+          logs[index],
+          style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildApiLogs(List<LogEntry> logs) {
+    if (logs.isEmpty) return const Center(child: Text('暂无日志'));
+    return ListView.builder(
+      controller: _scrollController,
+      itemCount: logs.length,
+      itemBuilder: (context, index) {
+        final log = logs[index];
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '[${log.type}] ',
+                  style: TextStyle(
+                    color: _getLogColor(log.type),
+                    fontWeight: FontWeight.bold,
                   ),
-                );
-              },
+                ),
+                TextSpan(text: log.payload),
+              ],
             ),
+            style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+          ),
+        );
+      },
     );
   }
 }

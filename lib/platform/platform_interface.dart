@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -83,35 +84,57 @@ class LinuxPlatform implements PlatformInterface {
 
   @override
   Future<void> setSystemProxy(String host, int port) async {
-    // GNOME
-    await Process.run('gsettings', [
-      'set', 'org.gnome.system.proxy', 'mode', 'manual'
+    final desktop = Platform.environment['XDG_CURRENT_DESKTOP']?.toLowerCase() ?? '';
+    if (desktop.contains('gnome') || desktop.contains('unity') || desktop.contains('cinnamon')) {
+      await _setGnomeProxy(host, port);
+    } else if (desktop.contains('kde') || desktop.contains('plasma')) {
+      await _setKdeProxy(host, port);
+    } else {
+      log('Unsupported desktop environment: $desktop', name: 'Platform');
+    }
+  }
+
+  Future<void> _setGnomeProxy(String host, int port) async {
+    final commands = [
+      ['set', 'org.gnome.system.proxy', 'mode', 'manual'],
+      ['set', 'org.gnome.system.proxy.http', 'host', host],
+      ['set', 'org.gnome.system.proxy.http', 'port', port.toString()],
+      ['set', 'org.gnome.system.proxy.https', 'host', host],
+      ['set', 'org.gnome.system.proxy.https', 'port', port.toString()],
+      ['set', 'org.gnome.system.proxy.socks', 'host', host],
+      ['set', 'org.gnome.system.proxy.socks', 'port', port.toString()],
+    ];
+    for (final args in commands) {
+      final result = await Process.run('gsettings', args);
+      if (result.exitCode != 0) {
+        log('gsettings failed: ${result.stderr}', name: 'Platform');
+      }
+    }
+  }
+
+  Future<void> _setKdeProxy(String host, int port) async {
+    final result = await Process.run('kwriteconfig5', [
+      '--file', 'kioslaverc',
+      '--group', 'Proxy Settings',
+      '--key', 'ProxyType', '1',
     ]);
-    await Process.run('gsettings', [
-      'set', 'org.gnome.system.proxy.http', 'host', host
-    ]);
-    await Process.run('gsettings', [
-      'set', 'org.gnome.system.proxy.http', 'port', port.toString()
-    ]);
-    await Process.run('gsettings', [
-      'set', 'org.gnome.system.proxy.https', 'host', host
-    ]);
-    await Process.run('gsettings', [
-      'set', 'org.gnome.system.proxy.https', 'port', port.toString()
-    ]);
-    await Process.run('gsettings', [
-      'set', 'org.gnome.system.proxy.socks', 'host', host
-    ]);
-    await Process.run('gsettings', [
-      'set', 'org.gnome.system.proxy.socks', 'port', port.toString()
-    ]);
+    if (result.exitCode != 0) {
+      log('KDE proxy setup failed: ${result.stderr}', name: 'Platform');
+    }
   }
 
   @override
   Future<void> clearSystemProxy() async {
-    await Process.run('gsettings', [
-      'set', 'org.gnome.system.proxy', 'mode', 'none'
-    ]);
+    final desktop = Platform.environment['XDG_CURRENT_DESKTOP']?.toLowerCase() ?? '';
+    if (desktop.contains('gnome') || desktop.contains('unity') || desktop.contains('cinnamon')) {
+      await Process.run('gsettings', ['set', 'org.gnome.system.proxy', 'mode', 'none']);
+    } else if (desktop.contains('kde') || desktop.contains('plasma')) {
+      await Process.run('kwriteconfig5', [
+        '--file', 'kioslaverc',
+        '--group', 'Proxy Settings',
+        '--key', 'ProxyType', '0',
+      ]);
+    }
   }
 }
 
