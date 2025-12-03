@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../data/models/proxy.dart';
 import '../../../data/services/mihomo_api_service.dart';
+import '../../../domain/core_manager.dart';
 
 class ProxiesScreen extends StatefulWidget {
   const ProxiesScreen({super.key});
@@ -12,6 +13,7 @@ class ProxiesScreen extends StatefulWidget {
 
 class _ProxiesScreenState extends State<ProxiesScreen> {
   final _apiService = MihomoApiService(host: '127.0.0.1', port: 9090);
+  final _coreManager = CoreManager();
   Map<String, Proxy> _proxies = {};
   bool _loading = true;
   String? _error;
@@ -23,6 +25,13 @@ class _ProxiesScreenState extends State<ProxiesScreen> {
   }
 
   Future<void> _loadProxies() async {
+    if (_coreManager.status != CoreStatus.running) {
+      setState(() {
+        _loading = false;
+        _error = '请先启动核心';
+      });
+      return;
+    }
     setState(() {
       _loading = true;
       _error = null;
@@ -30,7 +39,7 @@ class _ProxiesScreenState extends State<ProxiesScreen> {
     try {
       _proxies = await _apiService.getProxies();
     } catch (e) {
-      _error = e.toString();
+      _error = '连接失败，请确认核心已启动';
     }
     setState(() => _loading = false);
   }
