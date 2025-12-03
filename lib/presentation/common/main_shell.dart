@@ -17,7 +17,14 @@ class MainShell extends StatelessWidget {
     NavigationDestination(icon: Icon(Icons.settings), label: '设置'),
   ];
 
-  static const _routes = ['/', '/proxies', '/connections', '/logs', '/configs', '/settings'];
+  static const _routes = [
+    '/',
+    '/proxies',
+    '/connections',
+    '/logs',
+    '/profiles',
+    '/settings'
+  ];
 
   int _getSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;

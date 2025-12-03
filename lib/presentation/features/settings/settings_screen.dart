@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../data/repositories/core_repository.dart';
-import '../../../platform/platform_interface.dart';
+import '../../../data/repositories/core_status_repository.dart';
+import '../../../data/services/local_storage/preferences_service.dart';
+import '../../../data/services/native/platform_interface.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -14,7 +14,8 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final _coreRepository = CoreRepository();
+  final _coreRepository = CoreStatusRepository();
+  final _prefs = PreferencesService();
   String? _currentVersion;
   String? _latestVersion;
   bool _checkingUpdate = false;
@@ -30,8 +31,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    final mode = prefs.getString('themeMode') ?? 'system';
+    final mode = await _prefs.getThemeMode();
     setState(() {
       _themeMode = ThemeMode.values.firstWhere(
         (m) => m.name == mode,
@@ -55,9 +55,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _latestVersion = version.tagName;
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('检查更新失败: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('检查更新失败: $e')));
       }
     }
     setState(() => _checkingUpdate = false);
@@ -76,23 +75,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
       _currentVersion = version.tagName;
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('更新完成')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('更新完成')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('下载失败: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('下载失败: $e')));
       }
     }
     setState(() => _downloading = false);
   }
 
   Future<void> _setThemeMode(ThemeMode mode) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('themeMode', mode.name);
+    await _prefs.setThemeMode(mode.name);
     setState(() => _themeMode = mode);
   }
 
@@ -148,10 +144,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const Divider(),
-          ListTile(
-            leading: const Icon(Icons.info),
-            title: const Text('关于'),
-            subtitle: const Text('Magic Clash v1.0.0'),
+          const ListTile(
+            leading: Icon(Icons.info),
+            title: Text('关于'),
+            subtitle: Text('Magic Clash v1.0.0'),
           ),
         ],
       ),

@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 
 import '../models/core_version.dart';
 
-class CoreRepository {
+class CoreStatusRepository {
   static const _releaseApi =
       'https://api.github.com/repos/MetaCubeX/mihomo/releases/latest';
 

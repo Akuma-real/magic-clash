@@ -4,15 +4,16 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
+import '../core/constants.dart';
 import '../data/models/log_entry.dart';
-import '../data/services/mihomo_api_service.dart';
+import '../data/services/api/mihomo_api_service.dart';
 
 enum CoreStatus { stopped, starting, running, stopping }
 
-class CoreManager extends ChangeNotifier {
-  static final CoreManager _instance = CoreManager._();
-  factory CoreManager() => _instance;
-  CoreManager._();
+class CoreRunner extends ChangeNotifier {
+  static final CoreRunner _instance = CoreRunner._();
+  factory CoreRunner() => _instance;
+  CoreRunner._();
 
   Process? _process;
   CoreStatus _status = CoreStatus.stopped;
@@ -51,7 +52,7 @@ class CoreManager extends ChangeNotifier {
           );
         } else {
           dev.log('pkexec not found, trying direct execution',
-              name: 'CoreManager');
+              name: 'CoreRunner');
           _process = await Process.start(
             corePath,
             ['-f', configPath],
@@ -85,13 +86,11 @@ class CoreManager extends ChangeNotifier {
         notifyListeners();
       });
 
-      // 等待一小段时间确认启动成功
       await Future.delayed(const Duration(milliseconds: 500));
       if (_process != null) {
         _status = CoreStatus.running;
         notifyListeners();
       }
-      // 启动 API 日志监听
       _startApiLogListener();
     } catch (e) {
       _status = CoreStatus.stopped;
@@ -102,12 +101,12 @@ class CoreManager extends ChangeNotifier {
   }
 
   void _startApiLogListener() {
-    final api = MihomoApiService(host: '127.0.0.1', port: 9090);
+    final api = MihomoApiService();
     _apiLogSub = api.logsStream(level: 'debug').listen(
       (log) {
         if (_disposed) return;
         _apiLogs.add(log);
-        if (_apiLogs.length > 5000) _apiLogs.removeAt(0);
+        if (_apiLogs.length > kMaxLogEntries) _apiLogs.removeAt(0);
         notifyListeners();
       },
     );

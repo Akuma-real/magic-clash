@@ -1,13 +1,13 @@
 import 'package:go_router/go_router.dart';
 
-import 'screens/home/home_screen.dart';
-import 'screens/proxies/proxies_screen.dart';
-import 'screens/connections/connections_screen.dart';
-import 'screens/logs/logs_screen.dart';
-import 'screens/configs/configs_screen.dart';
-import 'screens/configs/config_editor_screen.dart';
-import 'screens/settings/settings_screen.dart';
-import 'widgets/main_shell.dart';
+import 'common/main_shell.dart';
+import 'features/connections/connections_screen.dart';
+import 'features/dashboard/dashboard_screen.dart';
+import 'features/logs/logs_screen.dart';
+import 'features/profiles/profile_editor_screen.dart';
+import 'features/profiles/profiles_screen.dart';
+import 'features/proxy/proxy_screen.dart';
+import 'features/settings/settings_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -18,13 +18,13 @@ final router = GoRouter(
         GoRoute(
           path: '/',
           pageBuilder: (context, state) => const NoTransitionPage(
-            child: HomeScreen(),
+            child: DashboardScreen(),
           ),
         ),
         GoRoute(
           path: '/proxies',
           pageBuilder: (context, state) => const NoTransitionPage(
-            child: ProxiesScreen(),
+            child: ProxyScreen(),
           ),
         ),
         GoRoute(
@@ -40,18 +40,18 @@ final router = GoRouter(
           ),
         ),
         GoRoute(
-          path: '/configs',
+          path: '/profiles',
           pageBuilder: (context, state) => const NoTransitionPage(
-            child: ConfigsScreen(),
+            child: ProfilesScreen(),
           ),
         ),
         GoRoute(
-          path: '/configs/edit',
+          path: '/profiles/edit',
           redirect: (context, state) {
-            if (state.extra is! String) return '/configs';
+            if (state.extra is! String) return '/profiles';
             return null;
           },
-          builder: (context, state) => ConfigEditorScreen(
+          builder: (context, state) => ProfileEditorScreen(
             configId: state.extra as String,
           ),
         ),

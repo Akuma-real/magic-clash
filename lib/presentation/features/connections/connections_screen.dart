@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/utils/byte_formatter.dart';
 import '../../../data/models/connection.dart';
-import '../../../data/services/mihomo_api_service.dart';
+import '../../../data/services/api/mihomo_api_service.dart';
 
 class ConnectionsScreen extends StatefulWidget {
   const ConnectionsScreen({super.key});
@@ -11,7 +12,7 @@ class ConnectionsScreen extends StatefulWidget {
 }
 
 class _ConnectionsScreenState extends State<ConnectionsScreen> {
-  final _apiService = MihomoApiService(host: '127.0.0.1', port: 9090);
+  final _apiService = MihomoApiService();
   List<Connection> _connections = [];
   bool _loading = true;
 
@@ -37,12 +38,6 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   Future<void> _closeAll() async {
     await _apiService.closeAllConnections();
     await _loadConnections();
-  }
-
-  String _formatBytes(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / 1024 / 1024).toStringAsFixed(1)} MB';
   }
 
   @override
@@ -78,7 +73,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       subtitle: Text(
-                        '${conn.chains.join(" → ")} | ↑${_formatBytes(conn.upload)} ↓${_formatBytes(conn.download)}',
+                        '${conn.chains.join(" → ")} | ↑${formatBytes(conn.upload)} ↓${formatBytes(conn.download)}',
                       ),
                       trailing: IconButton(
                         icon: const Icon(Icons.close),

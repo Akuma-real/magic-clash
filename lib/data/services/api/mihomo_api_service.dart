@@ -4,18 +4,19 @@ import 'dart:developer';
 
 import 'package:dio/dio.dart';
 
-import '../models/connection.dart';
-import '../models/log_entry.dart';
-import '../models/proxy.dart';
-import '../models/traffic.dart';
+import '../../../core/constants.dart';
+import '../../models/connection.dart';
+import '../../models/log_entry.dart';
+import '../../models/proxy.dart';
+import '../../models/traffic.dart';
 
 class MihomoApiService {
   final Dio _dio;
   final String baseUrl;
 
   MihomoApiService({
-    required String host,
-    required int port,
+    String host = kApiHost,
+    int port = kApiPort,
     String? secret,
   })  : baseUrl = 'http://$host:$port',
         _dio = Dio() {
@@ -41,13 +42,10 @@ class MihomoApiService {
     await _dio.put('$baseUrl/proxies/$group', data: {'name': name});
   }
 
-  Future<int> delayProxy(String name, {int timeout = 5000}) async {
+  Future<int> delayProxy(String name, {int timeout = kDelayTimeout}) async {
     final response = await _dio.get(
       '$baseUrl/proxies/$name/delay',
-      queryParameters: {
-        'timeout': timeout,
-        'url': 'http://www.gstatic.com/generate_204',
-      },
+      queryParameters: {'timeout': timeout, 'url': kDelayTestUrl},
     );
     return response.data['delay'] as int;
   }

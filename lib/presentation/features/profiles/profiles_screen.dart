@@ -3,46 +3,27 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../data/models/config_profile.dart';
-import '../../../data/repositories/config_repository.dart';
-import '../../../data/services/mihomo_api_service.dart';
+import '../../../logic/profile_controller.dart';
 
-class ConfigsScreen extends StatefulWidget {
-  const ConfigsScreen({super.key});
+class ProfilesScreen extends StatefulWidget {
+  const ProfilesScreen({super.key});
 
   @override
-  State<ConfigsScreen> createState() => _ConfigsScreenState();
+  State<ProfilesScreen> createState() => _ProfilesScreenState();
 }
 
-class _ConfigsScreenState extends State<ConfigsScreen> {
-  final _repository = ConfigRepository();
-  List<ConfigProfile> _profiles = [];
-  String? _selectedId;
-  bool _updating = false;
+class _ProfilesScreenState extends State<ProfilesScreen> {
+  final _controller = ProfileController();
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _controller.addListener(_onUpdate);
+    _controller.load();
   }
 
-  Future<void> _load() async {
-    _profiles = await _repository.getProfiles();
-    _selectedId = await _repository.getSelectedId();
-    setState(() {});
-  }
-
-  Future<void> _select(String id) async {
-    await _repository.setSelectedId(id);
-    _selectedId = id;
-    setState(() {});
-
-    final path = await _repository.getSelectedConfigPath();
-    if (path != null) {
-      try {
-        final api = MihomoApiService(host: '127.0.0.1', port: 9090);
-        await api.reloadConfig(path);
-      } catch (_) {}
-    }
+  void _onUpdate() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _addFromUrl() async {
@@ -81,11 +62,7 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
 
     if (ok == true && urlCtrl.text.isNotEmpty) {
       try {
-        await _repository.addFromUrl(
-          nameCtrl.text.isEmpty ? 'config' : nameCtrl.text,
-          urlCtrl.text,
-        );
-        await _load();
+        await _controller.addFromUrl(nameCtrl.text, urlCtrl.text);
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context)
@@ -106,8 +83,7 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
     final name = file.name.replaceAll(RegExp(r'\.(yaml|yml)$'), '');
 
     try {
-      await _repository.addFromFile(name, file.path!);
-      await _load();
+      await _controller.addFromFile(name, file.path!);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -134,16 +110,12 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
         ],
       ),
     );
-    if (ok == true) {
-      await _repository.delete(profile.id);
-      await _load();
-    }
+    if (ok == true) await _controller.delete(profile.id);
   }
 
   Future<void> _updateSubscription(ConfigProfile profile) async {
     try {
-      await _repository.updateSubscription(profile.id);
-      await _load();
+      await _controller.updateSubscription(profile.id);
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text('更新成功')));
@@ -157,10 +129,8 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
   }
 
   Future<void> _updateAll() async {
-    setState(() => _updating = true);
     try {
-      await _repository.updateAllSubscriptions();
-      await _load();
+      await _controller.updateAll();
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text('全部更新完成')));
@@ -171,11 +141,16 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
             .showSnackBar(SnackBar(content: Text('更新失败: $e')));
       }
     }
-    setState(() => _updating = false);
   }
 
   void _edit(ConfigProfile profile) {
-    context.push('/configs/edit', extra: profile.id);
+    context.push('/profiles/edit', extra: profile.id);
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_onUpdate);
+    super.dispose();
   }
 
   @override
@@ -184,7 +159,7 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
       appBar: AppBar(
         title: const Text('配置'),
         actions: [
-          if (_updating)
+          if (_controller.updating)
             const Padding(
               padding: EdgeInsets.all(16),
               child: SizedBox(
@@ -201,13 +176,13 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
             ),
         ],
       ),
-      body: _profiles.isEmpty
+      body: _controller.profiles.isEmpty
           ? const Center(child: Text('暂无配置'))
           : ListView.builder(
-              itemCount: _profiles.length,
+              itemCount: _controller.profiles.length,
               itemBuilder: (ctx, i) {
-                final p = _profiles[i];
-                final selected = p.id == _selectedId;
+                final p = _controller.profiles[i];
+                final selected = p.id == _controller.selectedId;
                 return ListTile(
                   leading: Icon(
                     selected ? Icons.check_circle : Icons.circle_outlined,
@@ -215,7 +190,7 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
                   ),
                   title: Text(p.name),
                   subtitle: Text(p.isSubscription ? '订阅' : '本地'),
-                  onTap: () => _select(p.id),
+                  onTap: () => _controller.select(p.id),
                   trailing: PopupMenuButton(
                     itemBuilder: (_) => [
                       const PopupMenuItem(value: 'edit', child: Text('编辑')),

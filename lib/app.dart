@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+import 'data/services/local_storage/preferences_service.dart';
 import 'presentation/router.dart';
 import 'presentation/theme/app_theme.dart';
 
@@ -21,8 +21,8 @@ class _AppState extends State<App> {
   }
 
   Future<void> _loadTheme() async {
-    final prefs = await SharedPreferences.getInstance();
-    final mode = prefs.getString('themeMode') ?? 'system';
+    final prefs = PreferencesService();
+    final mode = await prefs.getThemeMode();
     setState(() {
       _themeMode = ThemeMode.values.firstWhere(
         (m) => m.name == mode,

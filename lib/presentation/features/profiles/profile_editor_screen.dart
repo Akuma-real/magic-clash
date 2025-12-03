@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 
 import '../../../data/models/config_profile.dart';
-import '../../../data/repositories/config_repository.dart';
-import '../../../data/services/mihomo_api_service.dart';
+import '../../../data/repositories/profile_repository.dart';
+import '../../../data/services/api/mihomo_api_service.dart';
 
-class ConfigEditorScreen extends StatefulWidget {
+class ProfileEditorScreen extends StatefulWidget {
   final String configId;
-  const ConfigEditorScreen({super.key, required this.configId});
+  const ProfileEditorScreen({super.key, required this.configId});
 
   @override
-  State<ConfigEditorScreen> createState() => _ConfigEditorScreenState();
+  State<ProfileEditorScreen> createState() => _ProfileEditorScreenState();
 }
 
-class _ConfigEditorScreenState extends State<ConfigEditorScreen> {
-  final _repository = ConfigRepository();
+class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
+  final _repository = ProfileRepository();
   final _contentController = TextEditingController();
   final _nameController = TextEditingController();
   final _urlController = TextEditingController();
@@ -39,15 +39,13 @@ class _ConfigEditorScreenState extends State<ConfigEditorScreen> {
         if (_profile!.sourceUrl != null) {
           _urlController.text = _profile!.sourceUrl!;
         }
-
         final content = await _repository.readContent(widget.configId);
         _contentController.text = content;
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('加载失败: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('加载失败: $e')));
       }
     }
     setState(() => _loading = false);
@@ -71,21 +69,19 @@ class _ConfigEditorScreenState extends State<ConfigEditorScreen> {
       if (selectedId == widget.configId) {
         final path = await _repository.getSelectedConfigPath();
         if (path != null) {
-          final api = MihomoApiService(host: '127.0.0.1', port: 9090);
+          final api = MihomoApiService();
           await api.reloadConfig(path);
         }
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('保存成功')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('保存成功')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('保存失败: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('保存失败: $e')));
       }
     }
     setState(() => _saving = false);
@@ -163,9 +159,7 @@ class _ConfigEditorScreenState extends State<ConfigEditorScreen> {
             children: [
               const Text('配置内容预览'),
               TextButton(
-                onPressed: () {
-                  setState(() => _showPreview = !_showPreview);
-                },
+                onPressed: () => setState(() => _showPreview = !_showPreview),
                 child: Text(_showPreview ? '隐藏' : '显示'),
               ),
             ],

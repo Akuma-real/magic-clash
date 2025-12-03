@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../data/models/log_entry.dart';
-import '../../../domain/core_manager.dart';
+import '../../../logic/core_runner.dart';
 
 class LogsScreen extends StatefulWidget {
   const LogsScreen({super.key});
@@ -11,7 +11,7 @@ class LogsScreen extends StatefulWidget {
 }
 
 class _LogsScreenState extends State<LogsScreen> {
-  final _coreManager = CoreManager();
+  final _coreRunner = CoreRunner();
   final _scrollController = ScrollController();
   bool _autoScroll = true;
   String _filter = 'all';
@@ -20,7 +20,7 @@ class _LogsScreenState extends State<LogsScreen> {
   @override
   void initState() {
     super.initState();
-    _coreManager.addListener(_onLogsChanged);
+    _coreRunner.addListener(_onLogsChanged);
   }
 
   void _onLogsChanged() {
@@ -36,8 +36,8 @@ class _LogsScreenState extends State<LogsScreen> {
   }
 
   List<LogEntry> get _filteredLogs {
-    if (_filter == 'all') return _coreManager.apiLogs;
-    return _coreManager.apiLogs.where((l) => l.type == _filter).toList();
+    if (_filter == 'all') return _coreRunner.apiLogs;
+    return _coreRunner.apiLogs.where((l) => l.type == _filter).toList();
   }
 
   Color _getLogColor(String type) {
@@ -55,7 +55,7 @@ class _LogsScreenState extends State<LogsScreen> {
 
   @override
   void dispose() {
-    _coreManager.removeListener(_onLogsChanged);
+    _coreRunner.removeListener(_onLogsChanged);
     _scrollController.dispose();
     super.dispose();
   }
@@ -70,13 +70,9 @@ class _LogsScreenState extends State<LogsScreen> {
         actions: [
           DropdownButton<String>(
             value: _filter,
-            items: [
-              'all',
-              'debug',
-              'info',
-              'warning',
-              'error',
-            ].map((l) => DropdownMenuItem(value: l, child: Text(l))).toList(),
+            items: ['all', 'debug', 'info', 'warning', 'error']
+                .map((l) => DropdownMenuItem(value: l, child: Text(l)))
+                .toList(),
             onChanged: (v) {
               if (v != null) setState(() => _filter = v);
             },
@@ -98,7 +94,7 @@ class _LogsScreenState extends State<LogsScreen> {
   }
 
   Widget _buildProcessLogs() {
-    final logs = _coreManager.processLogs;
+    final logs = _coreRunner.processLogs;
     if (logs.isEmpty) return const Center(child: Text('暂无进程日志'));
     return ListView.builder(
       controller: _scrollController,

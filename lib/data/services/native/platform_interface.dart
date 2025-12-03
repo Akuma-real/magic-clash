@@ -44,24 +44,12 @@ class WindowsPlatform implements PlatformInterface {
     await Process.run('reg', [
       'add',
       r'HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings',
-      '/v',
-      'ProxyEnable',
-      '/t',
-      'REG_DWORD',
-      '/d',
-      '1',
-      '/f',
+      '/v', 'ProxyEnable', '/t', 'REG_DWORD', '/d', '1', '/f',
     ]);
     await Process.run('reg', [
       'add',
       r'HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings',
-      '/v',
-      'ProxyServer',
-      '/t',
-      'REG_SZ',
-      '/d',
-      '$host:$port',
-      '/f',
+      '/v', 'ProxyServer', '/t', 'REG_SZ', '/d', '$host:$port', '/f',
     ]);
   }
 
@@ -70,13 +58,7 @@ class WindowsPlatform implements PlatformInterface {
     await Process.run('reg', [
       'add',
       r'HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings',
-      '/v',
-      'ProxyEnable',
-      '/t',
-      'REG_DWORD',
-      '/d',
-      '0',
-      '/f',
+      '/v', 'ProxyEnable', '/t', 'REG_DWORD', '/d', '0', '/f',
     ]);
   }
 }
@@ -135,13 +117,8 @@ class LinuxPlatform implements PlatformInterface {
 
   Future<void> _setKdeProxy(String host, int port) async {
     final result = await Process.run('kwriteconfig5', [
-      '--file',
-      'kioslaverc',
-      '--group',
-      'Proxy Settings',
-      '--key',
-      'ProxyType',
-      '1',
+      '--file', 'kioslaverc', '--group', 'Proxy Settings',
+      '--key', 'ProxyType', '1',
     ]);
     if (result.exitCode != 0) {
       log('KDE proxy setup failed: ${result.stderr}', name: 'Platform');
@@ -155,21 +132,12 @@ class LinuxPlatform implements PlatformInterface {
     if (desktop.contains('gnome') ||
         desktop.contains('unity') ||
         desktop.contains('cinnamon')) {
-      await Process.run('gsettings', [
-        'set',
-        'org.gnome.system.proxy',
-        'mode',
-        'none',
-      ]);
+      await Process.run(
+          'gsettings', ['set', 'org.gnome.system.proxy', 'mode', 'none']);
     } else if (desktop.contains('kde') || desktop.contains('plasma')) {
       await Process.run('kwriteconfig5', [
-        '--file',
-        'kioslaverc',
-        '--group',
-        'Proxy Settings',
-        '--key',
-        'ProxyType',
-        '0',
+        '--file', 'kioslaverc', '--group', 'Proxy Settings',
+        '--key', 'ProxyType', '0',
       ]);
     }
   }
