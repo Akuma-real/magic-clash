@@ -4,10 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'app.dart';
+import 'core/di/service_locator.dart';
 import 'data/services/notification/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 初始化服务定位器
+  await ServiceLocator.instance.init();
 
   if (Platform.isWindows || Platform.isLinux) {
     await windowManager.ensureInitialized();

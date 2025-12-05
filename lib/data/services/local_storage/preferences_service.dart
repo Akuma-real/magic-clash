@@ -17,6 +17,7 @@ class PreferencesService {
   static const _updateChannelKey = 'updateChannel';
   static const _secretKey = 'api_secret';
   static const _webUiVersionKey = 'webui_version';
+  static const _localeKey = 'locale';
 
   Future<String?> getString(String key) async {
     final prefs = await SharedPreferences.getInstance();
@@ -81,4 +82,16 @@ class PreferencesService {
   /// 设置 WebUI 版本
   Future<void> setWebUiVersion(String version) async =>
       setString(_webUiVersionKey, version);
+
+  /// 获取语言设置，返回 null 表示跟随系统
+  Future<String?> getLocale() async => getString(_localeKey);
+
+  /// 设置语言，传入 null 表示跟随系统
+  Future<void> setLocale(String? locale) async {
+    if (locale == null) {
+      await remove(_localeKey);
+    } else {
+      await setString(_localeKey, locale);
+    }
+  }
 }

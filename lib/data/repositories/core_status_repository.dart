@@ -18,7 +18,10 @@ class CoreStatusRepository {
   static const _versionUrlBase =
       'https://github.com/MetaCubeX/mihomo/releases/download';
 
-  final Dio _dio = Dio();
+  final Dio _dio;
+
+  /// 构造函数注入依赖
+  CoreStatusRepository({required Dio dio}) : _dio = dio;
 
   /// 获取最新版本
   /// [includePrerelease] 为 true 时返回最新的 alpha/预发布版本

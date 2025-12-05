@@ -2,9 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../../../app.dart';
 import '../../../core/constants.dart';
-import '../../../data/repositories/core_status_repository.dart';
-import '../../../data/repositories/webui_repository.dart';
+import '../../../core/di/service_locator.dart';
+import '../../../l10n/l10n_extensions.dart';
 import '../../../data/services/local_storage/preferences_service.dart';
 import '../../../data/services/native/platform_interface.dart';
 import '../../../data/services/notification/notification_service.dart';
@@ -17,9 +18,9 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final _coreRepository = CoreStatusRepository();
-  final _webUiRepository = WebUiRepository();
-  final _prefs = PreferencesService();
+  final _coreRepository = sl.coreStatusRepository;
+  final _webUiRepository = sl.webUiRepository;
+  final _prefs = sl.preferencesService;
   final _notificationService = NotificationService();
   final _secretController = TextEditingController();
   String? _currentVersion;
@@ -32,6 +33,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String? _webUiVersion;
   bool _downloadingWebUi = false;
   double _webUiDownloadProgress = 0;
+  String? _locale; // null 表示跟随系统
 
   @override
   void initState() {
@@ -45,6 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final channel = await _prefs.getUpdateChannel();
     final secret = await _prefs.getSecret();
     final webUiVersion = await _prefs.getWebUiVersion();
+    final locale = await _prefs.getLocale();
     setState(() {
       _themeMode = ThemeMode.values.firstWhere(
         (m) => m.name == mode,
@@ -53,6 +56,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _updateChannel = channel;
       _secretController.text = secret;
       _webUiVersion = webUiVersion;
+      _locale = locale;
     });
   }
 
@@ -66,6 +70,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   /// 检查核心更新，可选择是否显示系统通知
   Future<void> _checkUpdate({bool showNotification = false}) async {
+    // 缓存 l10n 以避免异步上下文问题
+    final l10n = context.l10n;
     setState(() => _checkingUpdate = true);
     try {
       final version = await _coreRepository.getLatestVersion(
@@ -79,26 +85,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // 有新版本
           final channelName = _updateChannel == UpdateChannel.alpha
               ? 'Alpha'
-              : '正式';
+              : 'Stable';
           await _notificationService.showUpdateNotification(
             newVersion: _latestVersion!,
             releaseUrl:
                 'https://github.com/MetaCubeX/mihomo/releases/tag/$_latestVersion',
-            changelog: 'Mihomo 核心 ($channelName版) 有新版本可用，点击查看详情',
+            changelog: l10n.notificationNewVersion(channelName),
           );
         } else {
           // 已是最新版本
           await _notificationService.showNotification(
-            title: 'Mihomo 核心已是最新版本',
-            body: '当前版本: ${_currentVersion ?? "未知"}',
+            title: l10n.notificationCoreLatest,
+            body: l10n.notificationCoreLatestBody(_currentVersion ?? 'Unknown'),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('检查更新失败: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.errorCheckUpdateFailed(e.toString())),
+          ),
+        );
       }
     }
     setState(() => _checkingUpdate = false);
@@ -120,23 +128,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _currentVersion = version.tagName;
       _latestVersion = null; // 清除更新提示
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('更新完成')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.successUpdateComplete)),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('下载失败: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.errorDownloadFailed(e.toString())),
+          ),
+        );
       }
     }
     setState(() => _downloading = false);
   }
 
   Future<void> _setThemeMode(ThemeMode mode) async {
+    final appState = App.of(context);
     await _prefs.setThemeMode(mode.name);
     setState(() => _themeMode = mode);
+    appState?.setThemeMode(mode);
+  }
+
+  Future<void> _setLocale(String? locale) async {
+    final appState = App.of(context);
+    await _prefs.setLocale(locale);
+    setState(() => _locale = locale);
+    appState?.setLocale(locale != null ? Locale(locale) : null);
   }
 
   Future<void> _setUpdateChannel(UpdateChannel channel) async {
@@ -152,7 +171,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Secret 已保存')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.successSecretSaved)));
     }
   }
 
@@ -169,15 +188,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
       _webUiVersion = await _prefs.getWebUiVersion();
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('WebUI 下载完成')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.successWebUiDownloaded)),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('WebUI 下载失败: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.errorDownloadFailed(e.toString())),
+          ),
+        );
       }
     }
     setState(() => _downloadingWebUi = false);
@@ -186,13 +207,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('设置')),
+      appBar: AppBar(title: Text(context.l10n.settingsTitle)),
       body: ListView(
         children: [
           ListTile(
             leading: const Icon(Icons.memory),
-            title: const Text('核心版本'),
-            subtitle: Text(_currentVersion ?? '未安装'),
+            title: Text(context.l10n.settingsCoreVersion),
+            subtitle: Text(
+              _currentVersion ?? context.l10n.settingsNotInstalled,
+            ),
             trailing: _checkingUpdate
                 ? const SizedBox(
                     width: 24,
@@ -201,13 +224,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   )
                 : TextButton(
                     onPressed: () => _checkUpdate(showNotification: true),
-                    child: const Text('检查更新'),
+                    child: Text(context.l10n.actionCheckUpdate),
                   ),
           ),
           if (_latestVersion != null && _latestVersion != _currentVersion)
             ListTile(
               leading: const Icon(Icons.system_update),
-              title: Text('发现新版本: $_latestVersion'),
+              title: Text(
+                context.l10n.settingsNewVersionFound(_latestVersion!),
+              ),
               trailing: _downloading
                   ? SizedBox(
                       width: 100,
@@ -215,27 +240,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     )
                   : TextButton(
                       onPressed: _downloadUpdate,
-                      child: const Text('下载'),
+                      child: Text(context.l10n.actionDownload),
                     ),
             ),
           ListTile(
             leading: const Icon(Icons.science),
-            title: const Text('更新通道'),
+            title: Text(context.l10n.settingsUpdateChannel),
             subtitle: Text(
               _updateChannel == UpdateChannel.alpha
-                  ? 'Alpha (预发布版，可能不稳定)'
-                  : '正式版 (稳定版本)',
+                  ? context.l10n.settingsChannelAlphaDesc
+                  : context.l10n.settingsChannelStableDesc,
             ),
             trailing: DropdownButton<UpdateChannel>(
               value: _updateChannel,
-              items: const [
+              items: [
                 DropdownMenuItem(
                   value: UpdateChannel.stable,
-                  child: Text('正式版'),
+                  child: Text(context.l10n.settingsChannelStable),
                 ),
                 DropdownMenuItem(
                   value: UpdateChannel.alpha,
-                  child: Text('Alpha'),
+                  child: Text(context.l10n.settingsChannelAlpha),
                 ),
               ],
               onChanged: (channel) {
@@ -246,24 +271,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.palette),
-            title: const Text('主题'),
+            title: Text(context.l10n.settingsTheme),
             trailing: DropdownButton<ThemeMode>(
               value: _themeMode,
-              items: const [
-                DropdownMenuItem(value: ThemeMode.system, child: Text('跟随系统')),
-                DropdownMenuItem(value: ThemeMode.light, child: Text('浅色')),
-                DropdownMenuItem(value: ThemeMode.dark, child: Text('深色')),
+              items: [
+                DropdownMenuItem(
+                  value: ThemeMode.system,
+                  child: Text(context.l10n.settingsThemeSystem),
+                ),
+                DropdownMenuItem(
+                  value: ThemeMode.light,
+                  child: Text(context.l10n.settingsThemeLight),
+                ),
+                DropdownMenuItem(
+                  value: ThemeMode.dark,
+                  child: Text(context.l10n.settingsThemeDark),
+                ),
               ],
               onChanged: (mode) {
                 if (mode != null) _setThemeMode(mode);
               },
             ),
           ),
+          ListTile(
+            leading: const Icon(Icons.language),
+            title: Text(context.l10n.settingsLanguage),
+            trailing: DropdownButton<String?>(
+              value: _locale,
+              items: [
+                DropdownMenuItem(
+                  value: null,
+                  child: Text(context.l10n.settingsLanguageSystem),
+                ),
+                DropdownMenuItem(
+                  value: 'zh',
+                  child: Text(context.l10n.settingsLanguageZh),
+                ),
+                DropdownMenuItem(
+                  value: 'en',
+                  child: Text(context.l10n.settingsLanguageEn),
+                ),
+              ],
+              onChanged: (locale) => _setLocale(locale),
+            ),
+          ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.key),
-            title: const Text('API Secret'),
-            subtitle: Text('默认值: $kDefaultSecret'),
+            title: Text(context.l10n.settingsApiSecret),
+            subtitle: Text(
+              context.l10n.settingsApiSecretDefault(kDefaultSecret),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -272,16 +330,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Expanded(
                   child: TextField(
                     controller: _secretController,
-                    decoration: const InputDecoration(
-                      hintText: '输入 API Secret',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      hintText: context.l10n.settingsApiSecretHint,
+                      border: const OutlineInputBorder(),
                       isDense: true,
                     ),
                     obscureText: true,
                   ),
                 ),
                 const SizedBox(width: 8),
-                FilledButton(onPressed: _saveSecret, child: const Text('保存')),
+                FilledButton(
+                  onPressed: _saveSecret,
+                  child: Text(context.l10n.actionSave),
+                ),
               ],
             ),
           ),
@@ -289,8 +350,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.web),
-            title: const Text('WebUI (Zashboard)'),
-            subtitle: Text(_webUiVersion ?? '未安装'),
+            title: Text(context.l10n.settingsWebUi),
+            subtitle: Text(_webUiVersion ?? context.l10n.settingsNotInstalled),
             trailing: _downloadingWebUi
                 ? SizedBox(
                     width: 100,
@@ -300,14 +361,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   )
                 : TextButton(
                     onPressed: _downloadWebUi,
-                    child: Text(_webUiVersion == null ? '下载' : '更新'),
+                    child: Text(
+                      _webUiVersion == null
+                          ? context.l10n.actionDownload
+                          : context.l10n.actionUpdate,
+                    ),
                   ),
           ),
           const Divider(),
-          const ListTile(
-            leading: Icon(Icons.info),
-            title: Text('关于'),
-            subtitle: Text('Magic Clash v1.0.0'),
+          ListTile(
+            leading: const Icon(Icons.info),
+            title: Text(context.l10n.settingsAbout),
+            subtitle: Text(context.l10n.settingsAboutVersion('1.0.0')),
           ),
         ],
       ),

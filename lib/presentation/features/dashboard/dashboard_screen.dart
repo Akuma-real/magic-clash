@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/di/service_locator.dart';
 import '../../../data/models/log_entry.dart';
-import '../../../data/repositories/webui_repository.dart';
+import '../../../l10n/l10n_extensions.dart';
 import '../../../logic/core_runner.dart';
 import '../../../logic/home_controller.dart';
 
@@ -15,7 +16,6 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final _controller = HomeController();
-  final _webUiRepository = WebUiRepository();
   final _scrollController = ScrollController();
 
   @override
@@ -45,7 +45,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           color: Colors.orange,
           size: 48,
         ),
-        title: const Text('端口被占用'),
+        title: Text(context.l10n.portConflictTitle),
         content: _PortConflictContent(
           port: conflict.port,
           controller: _controller,
@@ -53,7 +53,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('取消'),
+            child: Text(context.l10n.actionCancel),
           ),
           FilledButton.icon(
             onPressed: () {
@@ -61,7 +61,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _killPortAndRetry(conflict.port);
             },
             icon: const Icon(Icons.refresh),
-            label: const Text('强制释放并重试'),
+            label: Text(context.l10n.portConflictForceRelease),
           ),
         ],
       ),
@@ -73,9 +73,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       await _controller.killPortAndRetry(port);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('操作失败: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.errorOperationFailed(e.toString())),
+          ),
+        );
       }
     }
   }
@@ -99,9 +101,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       await _controller.downloadCore();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('下载失败: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.errorDownloadFailed(e.toString())),
+          ),
+        );
       }
     }
   }
@@ -119,15 +123,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _openWebUI() async {
-    final url = await _webUiRepository.getWebUiUrlWithAuth();
+    final url = await sl.webUiRepository.getWebUiUrlWithAuth();
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('无法打开浏览器')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.errorCannotOpenBrowser)),
+        );
       }
     }
   }
@@ -146,7 +150,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final isRunning = _controller.status == CoreStatus.running;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Magic Clash')),
+      appBar: AppBar(title: Text(context.l10n.appTitle)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -164,7 +168,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        isRunning ? '运行中' : '已停止',
+                        isRunning
+                            ? context.l10n.statusRunning
+                            : context.l10n.statusStopped,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const Spacer(),
@@ -179,7 +185,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: FilledButton.icon(
                           onPressed: _toggleCore,
                           icon: Icon(isRunning ? Icons.stop : Icons.play_arrow),
-                          label: Text(isRunning ? '停止' : '启动'),
+                          label: Text(
+                            isRunning
+                                ? context.l10n.actionStop
+                                : context.l10n.actionStart,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -188,7 +198,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           child: OutlinedButton.icon(
                             onPressed: _openWebUI,
                             icon: const Icon(Icons.web),
-                            label: const Text('WebUI'),
+                            label: Text(context.l10n.webUi),
                           ),
                         ),
                       if (_controller.coreVersion == null &&
@@ -197,7 +207,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           child: OutlinedButton.icon(
                             onPressed: _downloadCore,
                             icon: const Icon(Icons.download),
-                            label: const Text('下载核心'),
+                            label: Text(context.l10n.actionDownloadCore),
                           ),
                         ),
                     ],
@@ -228,17 +238,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       const Icon(Icons.terminal, size: 20),
                       const SizedBox(width: 8),
                       Text(
-                        '进程日志',
+                        context.l10n.logsTitle,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const Spacer(),
                       Text(
-                        '${_controller.logs.length} 条',
+                        context.l10n.logsCount(_controller.logs.length),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete_outline, size: 20),
-                        tooltip: '清空日志',
+                        tooltip: context.l10n.logsClear,
                         onPressed: _controller.logs.isEmpty
                             ? null
                             : () => _controller.clearLogs(),
@@ -250,10 +260,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 SizedBox(
                   height: 250,
                   child: _controller.logs.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
-                            '暂无日志',
-                            style: TextStyle(color: Colors.grey),
+                            context.l10n.logsEmpty,
+                            style: const TextStyle(color: Colors.grey),
                           ),
                         )
                       : ListView.builder(
@@ -362,9 +372,12 @@ class _PortConflictContentState extends State<_PortConflictContent> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('端口 ${widget.port} 已被占用，无法启动核心。'),
+        Text(context.l10n.portConflictMessage(widget.port)),
         const SizedBox(height: 16),
-        const Text('占用进程信息：', style: TextStyle(fontWeight: FontWeight.bold)),
+        Text(
+          context.l10n.portConflictProcessInfo,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 8),
         Container(
           width: double.infinity,
@@ -379,7 +392,7 @@ class _PortConflictContentState extends State<_PortConflictContent> {
               ? const Center(child: CircularProgressIndicator())
               : SingleChildScrollView(
                   child: SelectableText(
-                    _processInfo ?? '未知',
+                    _processInfo ?? context.l10n.portConflictUnknown,
                     style: const TextStyle(
                       fontFamily: 'monospace',
                       fontSize: 12,
@@ -388,7 +401,7 @@ class _PortConflictContentState extends State<_PortConflictContent> {
                 ),
         ),
         const SizedBox(height: 12),
-        const Text('请选择处理方式：'),
+        Text(context.l10n.portConflictChoose),
       ],
     );
   }

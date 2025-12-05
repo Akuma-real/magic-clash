@@ -1,0 +1,439 @@
+{
+    "@@locale": "zh",
+    "appTitle": "Magic Clash",
+    "@appTitle": {
+        "description": "应用标题"
+    },
+    "navHome": "主页",
+    "@navHome": {
+        "description": "导航-主页"
+    },
+    "navProfiles": "配置",
+    "@navProfiles": {
+        "description": "导航-配置"
+    },
+    "navSettings": "设置",
+    "@navSettings": {
+        "description": "导航-设置"
+    },
+    "statusRunning": "运行中",
+    "@statusRunning": {
+        "description": "核心状态-运行中"
+    },
+    "statusStopped": "已停止",
+    "@statusStopped": {
+        "description": "核心状态-已停止"
+    },
+    "actionStart": "启动",
+    "@actionStart": {
+        "description": "操作-启动"
+    },
+    "actionStop": "停止",
+    "@actionStop": {
+        "description": "操作-停止"
+    },
+    "actionDownloadCore": "下载核心",
+    "@actionDownloadCore": {
+        "description": "操作-下载核心"
+    },
+    "actionCancel": "取消",
+    "@actionCancel": {
+        "description": "操作-取消"
+    },
+    "actionSave": "保存",
+    "@actionSave": {
+        "description": "操作-保存"
+    },
+    "actionDelete": "删除",
+    "@actionDelete": {
+        "description": "操作-删除"
+    },
+    "actionEdit": "编辑",
+    "@actionEdit": {
+        "description": "操作-编辑"
+    },
+    "actionUpdate": "更新",
+    "@actionUpdate": {
+        "description": "操作-更新"
+    },
+    "actionAdd": "添加",
+    "@actionAdd": {
+        "description": "操作-添加"
+    },
+    "actionDownload": "下载",
+    "@actionDownload": {
+        "description": "操作-下载"
+    },
+    "actionCheckUpdate": "检查更新",
+    "@actionCheckUpdate": {
+        "description": "操作-检查更新"
+    },
+    "actionShow": "显示",
+    "@actionShow": {
+        "description": "操作-显示"
+    },
+    "actionHide": "隐藏",
+    "@actionHide": {
+        "description": "操作-隐藏"
+    },
+    "webUi": "WebUI",
+    "@webUi": {
+        "description": "WebUI"
+    },
+    "logsTitle": "进程日志",
+    "@logsTitle": {
+        "description": "日志标题"
+    },
+    "logsEmpty": "暂无日志",
+    "@logsEmpty": {
+        "description": "无日志提示"
+    },
+    "logsClear": "清空日志",
+    "@logsClear": {
+        "description": "清空日志"
+    },
+    "logsCount": "{count} 条",
+    "@logsCount": {
+        "description": "日志条数",
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "portConflictTitle": "端口被占用",
+    "@portConflictTitle": {
+        "description": "端口冲突对话框标题"
+    },
+    "portConflictMessage": "端口 {port} 已被占用，无法启动核心。",
+    "@portConflictMessage": {
+        "description": "端口冲突消息",
+        "placeholders": {
+            "port": {
+                "type": "String"
+            }
+        }
+    },
+    "portConflictProcessInfo": "占用进程信息：",
+    "@portConflictProcessInfo": {
+        "description": "占用进程信息"
+    },
+    "portConflictUnknown": "未知",
+    "@portConflictUnknown": {
+        "description": "未知进程"
+    },
+    "portConflictChoose": "请选择处理方式：",
+    "@portConflictChoose": {
+        "description": "选择处理方式"
+    },
+    "portConflictForceRelease": "强制释放并重试",
+    "@portConflictForceRelease": {
+        "description": "强制释放端口并重试"
+    },
+    "errorOperationFailed": "操作失败: {error}",
+    "@errorOperationFailed": {
+        "description": "操作失败错误",
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "errorDownloadFailed": "下载失败: {error}",
+    "@errorDownloadFailed": {
+        "description": "下载失败错误",
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "errorAddFailed": "添加失败: {error}",
+    "@errorAddFailed": {
+        "description": "添加失败错误",
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "errorImportFailed": "导入失败: {error}",
+    "@errorImportFailed": {
+        "description": "导入失败错误",
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "errorUpdateFailed": "更新失败: {error}",
+    "@errorUpdateFailed": {
+        "description": "更新失败错误",
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "errorLoadFailed": "加载失败: {error}",
+    "@errorLoadFailed": {
+        "description": "加载失败错误",
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "errorSaveFailed": "保存失败: {error}",
+    "@errorSaveFailed": {
+        "description": "保存失败错误",
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "errorCheckUpdateFailed": "检查更新失败: {error}",
+    "@errorCheckUpdateFailed": {
+        "description": "检查更新失败错误",
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "errorCannotOpenBrowser": "无法打开浏览器",
+    "@errorCannotOpenBrowser": {
+        "description": "无法打开浏览器"
+    },
+    "errorDownloadCoreFirst": "请先下载核心",
+    "@errorDownloadCoreFirst": {
+        "description": "需要先下载核心"
+    },
+    "errorAddConfigFirst": "请先添加配置文件",
+    "@errorAddConfigFirst": {
+        "description": "需要先添加配置"
+    },
+    "errorGenerateConfigFailed": "生成运行时配置失败",
+    "@errorGenerateConfigFailed": {
+        "description": "生成配置失败"
+    },
+    "successUpdateComplete": "更新完成",
+    "@successUpdateComplete": {
+        "description": "更新完成"
+    },
+    "successAllUpdateComplete": "全部更新完成",
+    "@successAllUpdateComplete": {
+        "description": "全部更新完成"
+    },
+    "successSaved": "保存成功",
+    "@successSaved": {
+        "description": "保存成功"
+    },
+    "successSecretSaved": "Secret 已保存",
+    "@successSecretSaved": {
+        "description": "Secret已保存"
+    },
+    "successWebUiDownloaded": "WebUI 下载完成",
+    "@successWebUiDownloaded": {
+        "description": "WebUI下载完成"
+    },
+    "successUpdated": "更新成功",
+    "@successUpdated": {
+        "description": "更新成功"
+    },
+    "profilesTitle": "配置",
+    "@profilesTitle": {
+        "description": "配置页面标题"
+    },
+    "profilesEmpty": "暂无配置",
+    "@profilesEmpty": {
+        "description": "无配置提示"
+    },
+    "profilesUpdateAll": "更新全部订阅",
+    "@profilesUpdateAll": {
+        "description": "更新全部订阅"
+    },
+    "profileTypeSubscription": "订阅",
+    "@profileTypeSubscription": {
+        "description": "订阅类型"
+    },
+    "profileTypeLocal": "本地",
+    "@profileTypeLocal": {
+        "description": "本地类型"
+    },
+    "profileAddFromUrl": "从 URL 添加",
+    "@profileAddFromUrl": {
+        "description": "从URL添加"
+    },
+    "profileAddFromFile": "从文件导入",
+    "@profileAddFromFile": {
+        "description": "从文件导入"
+    },
+    "profileName": "名称",
+    "@profileName": {
+        "description": "配置名称"
+    },
+    "profileUrl": "URL",
+    "@profileUrl": {
+        "description": "配置URL"
+    },
+    "profileDeleteConfirmTitle": "确认删除",
+    "@profileDeleteConfirmTitle": {
+        "description": "删除确认标题"
+    },
+    "profileDeleteConfirmMessage": "删除配置 \"{name}\"？",
+    "@profileDeleteConfirmMessage": {
+        "description": "删除确认消息",
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "profileEditTitle": "编辑配置",
+    "@profileEditTitle": {
+        "description": "编辑配置标题"
+    },
+    "profileEditSubscriptionTitle": "编辑订阅",
+    "@profileEditSubscriptionTitle": {
+        "description": "编辑订阅标题"
+    },
+    "profileNotFound": "配置未找到",
+    "@profileNotFound": {
+        "description": "配置未找到"
+    },
+    "profileContentPreview": "配置内容预览",
+    "@profileContentPreview": {
+        "description": "配置内容预览"
+    },
+    "settingsTitle": "设置",
+    "@settingsTitle": {
+        "description": "设置页面标题"
+    },
+    "settingsCoreVersion": "核心版本",
+    "@settingsCoreVersion": {
+        "description": "核心版本"
+    },
+    "settingsNotInstalled": "未安装",
+    "@settingsNotInstalled": {
+        "description": "未安装"
+    },
+    "settingsNewVersionFound": "发现新版本: {version}",
+    "@settingsNewVersionFound": {
+        "description": "发现新版本",
+        "placeholders": {
+            "version": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsUpdateChannel": "更新通道",
+    "@settingsUpdateChannel": {
+        "description": "更新通道"
+    },
+    "settingsChannelStable": "正式版",
+    "@settingsChannelStable": {
+        "description": "正式版通道"
+    },
+    "settingsChannelAlpha": "Alpha",
+    "@settingsChannelAlpha": {
+        "description": "Alpha通道"
+    },
+    "settingsChannelStableDesc": "正式版 (稳定版本)",
+    "@settingsChannelStableDesc": {
+        "description": "正式版描述"
+    },
+    "settingsChannelAlphaDesc": "Alpha (预发布版，可能不稳定)",
+    "@settingsChannelAlphaDesc": {
+        "description": "Alpha版描述"
+    },
+    "settingsTheme": "主题",
+    "@settingsTheme": {
+        "description": "主题"
+    },
+    "settingsThemeSystem": "跟随系统",
+    "@settingsThemeSystem": {
+        "description": "跟随系统"
+    },
+    "settingsThemeLight": "浅色",
+    "@settingsThemeLight": {
+        "description": "浅色主题"
+    },
+    "settingsThemeDark": "深色",
+    "@settingsThemeDark": {
+        "description": "深色主题"
+    },
+    "settingsApiSecret": "API Secret",
+    "@settingsApiSecret": {
+        "description": "API Secret"
+    },
+    "settingsApiSecretDefault": "默认值: {value}",
+    "@settingsApiSecretDefault": {
+        "description": "默认Secret值",
+        "placeholders": {
+            "value": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsApiSecretHint": "输入 API Secret",
+    "@settingsApiSecretHint": {
+        "description": "输入Secret提示"
+    },
+    "settingsWebUi": "WebUI (Zashboard)",
+    "@settingsWebUi": {
+        "description": "WebUI设置"
+    },
+    "settingsAbout": "关于",
+    "@settingsAbout": {
+        "description": "关于"
+    },
+    "settingsAboutVersion": "Magic Clash v{version}",
+    "@settingsAboutVersion": {
+        "description": "应用版本",
+        "placeholders": {
+            "version": {
+                "type": "String"
+            }
+        }
+    },
+    "notificationCoreLatest": "Mihomo 核心已是最新版本",
+    "@notificationCoreLatest": {
+        "description": "核心已最新通知"
+    },
+    "notificationCoreLatestBody": "当前版本: {version}",
+    "@notificationCoreLatestBody": {
+        "description": "当前版本通知内容",
+        "placeholders": {
+            "version": {
+                "type": "String"
+            }
+        }
+    },
+    "notificationNewVersion": "Mihomo 核心 ({channel}版) 有新版本可用，点击查看详情",
+    "@notificationNewVersion": {
+        "description": "新版本通知",
+        "placeholders": {
+            "channel": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsLanguage": "语言",
+    "@settingsLanguage": {
+        "description": "语言设置"
+    },
+    "settingsLanguageSystem": "跟随系统",
+    "@settingsLanguageSystem": {
+        "description": "跟随系统语言"
+    },
+    "settingsLanguageZh": "简体中文",
+    "@settingsLanguageZh": {
+        "description": "简体中文"
+    },
+    "settingsLanguageEn": "English",
+    "@settingsLanguageEn": {
+        "description": "英语"
+    }
+}

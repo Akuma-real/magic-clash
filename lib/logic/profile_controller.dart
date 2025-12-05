@@ -1,16 +1,24 @@
 import 'package:flutter/foundation.dart';
 
+import '../core/di/service_locator.dart';
 import '../data/models/config_profile.dart';
 import '../data/repositories/profile_repository.dart';
 import '../data/services/api/mihomo_api_service.dart';
 
 class ProfileController extends ChangeNotifier {
-  final _repository = ProfileRepository();
-  final _apiService = MihomoApiService();
+  final ProfileRepository _repository;
+  final MihomoApiService _apiService;
 
   List<ConfigProfile> profiles = [];
   String? selectedId;
   bool updating = false;
+
+  /// 构造函数注入依赖
+  ProfileController({
+    ProfileRepository? repository,
+    MihomoApiService? apiService,
+  }) : _repository = repository ?? sl.profileRepository,
+       _apiService = apiService ?? sl.mihomoApiService;
 
   Future<void> load() async {
     profiles = await _repository.getProfiles();
@@ -32,10 +40,7 @@ class ProfileController extends ChangeNotifier {
   }
 
   Future<void> addFromUrl(String name, String url) async {
-    await _repository.addFromUrl(
-      name.isEmpty ? 'config' : name,
-      url,
-    );
+    await _repository.addFromUrl(name.isEmpty ? 'config' : name, url);
     await load();
   }
 

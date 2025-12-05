@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/di/service_locator.dart';
 import '../../../data/models/config_profile.dart';
-import '../../../data/repositories/profile_repository.dart';
-import '../../../data/services/api/mihomo_api_service.dart';
+import '../../../l10n/l10n_extensions.dart';
 
 class ProfileEditorScreen extends StatefulWidget {
   final String configId;
@@ -13,7 +13,7 @@ class ProfileEditorScreen extends StatefulWidget {
 }
 
 class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
-  final _repository = ProfileRepository();
+  final _repository = sl.profileRepository;
   final _contentController = TextEditingController();
   final _nameController = TextEditingController();
   final _urlController = TextEditingController();
@@ -44,8 +44,9 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('加载失败: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('加载失败: $e')));
       }
     }
     setState(() => _loading = false);
@@ -69,19 +70,20 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
       if (selectedId == widget.configId) {
         final path = await _repository.getSelectedConfigPath();
         if (path != null) {
-          final api = MihomoApiService();
-          await api.reloadConfig(path);
+          await sl.mihomoApiService.reloadConfig(path);
         }
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('保存成功')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.successSaved)));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('保存失败: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.errorSaveFailed(e.toString()))),
+        );
       }
     }
     setState(() => _saving = false);
@@ -99,14 +101,14 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
   Widget build(BuildContext context) {
     if (_loading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('编辑配置')),
+        appBar: AppBar(title: Text(context.l10n.profileEditTitle)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
     if (_profile == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('编辑配置')),
-        body: const Center(child: Text('配置未找到')),
+        appBar: AppBar(title: Text(context.l10n.profileEditTitle)),
+        body: Center(child: Text(context.l10n.profileNotFound)),
       );
     }
 
@@ -114,7 +116,11 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isSubscription ? '编辑订阅' : '编辑配置'),
+        title: Text(
+          isSubscription
+              ? context.l10n.profileEditSubscriptionTitle
+              : context.l10n.profileEditTitle,
+        ),
         actions: [
           _saving
               ? const Padding(
@@ -141,12 +147,14 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
             children: [
               TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: '名称'),
+                decoration: InputDecoration(
+                  labelText: context.l10n.profileName,
+                ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _urlController,
-                decoration: const InputDecoration(labelText: 'URL'),
+                decoration: InputDecoration(labelText: context.l10n.profileUrl),
               ),
             ],
           ),
@@ -157,10 +165,14 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('配置内容预览'),
+              Text(context.l10n.profileContentPreview),
               TextButton(
                 onPressed: () => setState(() => _showPreview = !_showPreview),
-                child: Text(_showPreview ? '隐藏' : '显示'),
+                child: Text(
+                  _showPreview
+                      ? context.l10n.actionHide
+                      : context.l10n.actionShow,
+                ),
               ),
             ],
           ),

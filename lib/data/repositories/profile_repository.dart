@@ -10,10 +10,24 @@ import '../services/local_storage/preferences_service.dart';
 import '../services/native/platform_interface.dart';
 
 class ProfileRepository {
-  final _dio = Dio();
-  final _uuid = const Uuid();
-  final _prefs = PreferencesService();
-  final _parser = SubscriptionParser();
+  final Dio _dio;
+  final Uuid _uuid;
+  final PreferencesService _prefs;
+  final SubscriptionParser _parser;
+  final PlatformInterface _platform;
+
+  /// 构造函数注入依赖
+  ProfileRepository({
+    required Dio dio,
+    required PreferencesService preferencesService,
+    required PlatformInterface platformInterface,
+    Uuid? uuid,
+    SubscriptionParser? parser,
+  }) : _dio = dio,
+       _prefs = preferencesService,
+       _platform = platformInterface,
+       _uuid = uuid ?? const Uuid(),
+       _parser = parser ?? SubscriptionParser();
 
   String _sanitizeFileName(String name) {
     return name.replaceAll(RegExp(r'[/\\:*?"<>|.]'), '_');
@@ -38,7 +52,7 @@ class ProfileRepository {
     final profiles = await getProfiles();
     final profile = profiles.where((p) => p.id == id).firstOrNull;
     if (profile == null) return null;
-    final configDir = await PlatformInterface.instance.getConfigDirectory();
+    final configDir = await _platform.getConfigDirectory();
     return '$configDir/${profile.fileName}';
   }
 
@@ -47,7 +61,7 @@ class ProfileRepository {
     final configPath = await getSelectedConfigPath();
     if (configPath == null) return null;
 
-    final configDir = await PlatformInterface.instance.getConfigDirectory();
+    final configDir = await _platform.getConfigDirectory();
     final runtimePath = '$configDir/runtime_config.yaml';
 
     // 获取用户设置的 secret
@@ -120,7 +134,7 @@ class ProfileRepository {
   }
 
   Future<ConfigProfile> addFromUrl(String name, String url) async {
-    final configDir = await PlatformInterface.instance.getConfigDirectory();
+    final configDir = await _platform.getConfigDirectory();
     await Directory(configDir).create(recursive: true);
 
     final decodedUrl = Uri.decodeFull(url);
@@ -157,7 +171,7 @@ class ProfileRepository {
   }
 
   Future<ConfigProfile> addFromFile(String name, String sourcePath) async {
-    final configDir = await PlatformInterface.instance.getConfigDirectory();
+    final configDir = await _platform.getConfigDirectory();
     await Directory(configDir).create(recursive: true);
 
     final content = await File(sourcePath).readAsString();
@@ -185,7 +199,7 @@ class ProfileRepository {
     final profile = profiles.where((p) => p.id == id).firstOrNull;
     if (profile == null) return;
 
-    final configDir = await PlatformInterface.instance.getConfigDirectory();
+    final configDir = await _platform.getConfigDirectory();
     final file = File('$configDir/${profile.fileName}');
     if (await file.exists()) await file.delete();
 
@@ -204,7 +218,7 @@ class ProfileRepository {
     final profile = profiles[index];
     if (profile.sourceUrl == null) return;
 
-    final configDir = await PlatformInterface.instance.getConfigDirectory();
+    final configDir = await _platform.getConfigDirectory();
     final decodedUrl = Uri.decodeFull(profile.sourceUrl!);
     final response = await _dio.get<String>(
       decodedUrl,
@@ -237,7 +251,7 @@ class ProfileRepository {
     final profile = profiles.where((p) => p.id == id).firstOrNull;
     if (profile == null) throw Exception('Config not found');
 
-    final configDir = await PlatformInterface.instance.getConfigDirectory();
+    final configDir = await _platform.getConfigDirectory();
     return File('$configDir/${profile.fileName}').readAsString();
   }
 
@@ -246,7 +260,7 @@ class ProfileRepository {
     final index = profiles.indexWhere((p) => p.id == id);
     if (index == -1) throw Exception('Config not found');
 
-    final configDir = await PlatformInterface.instance.getConfigDirectory();
+    final configDir = await _platform.getConfigDirectory();
     await File('$configDir/${profiles[index].fileName}').writeAsString(content);
 
     profiles[index] = profiles[index].copyWith(updatedAt: DateTime.now());

@@ -1,152 +1,114 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
 import '../data/models/log_entry.dart';
-import '../data/repositories/core_status_repository.dart';
-import '../data/repositories/profile_repository.dart';
-import '../data/repositories/webui_repository.dart';
-import '../data/services/native/platform_interface.dart';
+import 'core_controller.dart';
 import 'core_runner.dart';
+import 'webui_controller.dart';
 
+/// 主页控制器（组合层）
+///
+/// 组合 CoreController 和 WebUiController，
+/// 为 DashboardScreen 提供统一的状态接口
 class HomeController extends ChangeNotifier {
-  final _coreRunner = CoreRunner();
-  final _coreRepository = CoreStatusRepository();
-  final _profileRepository = ProfileRepository();
-  final _webUiRepository = WebUiRepository();
+  final CoreController coreController;
+  final WebUiController webUiController;
   bool _disposed = false;
 
-  String? corePath;
-  String? configPath;
-  String? coreVersion;
-  bool isDownloading = false;
-  double downloadProgress = 0;
-  bool isDownloadingWebUi = false;
-  double webUiDownloadProgress = 0;
+  /// 核心文件路径
+  String? get corePath => coreController.corePath;
 
-  CoreStatus get status => _coreRunner.status;
+  /// 配置文件路径
+  String? get configPath => coreController.configPath;
+
+  /// 当前核心版本
+  String? get coreVersion => coreController.coreVersion;
+
+  /// 核心运行状态
+  CoreStatus get status => coreController.status;
 
   /// 获取进程日志列表
-  List<LogEntry> get logs => _coreRunner.logs;
+  List<LogEntry> get logs => coreController.logs;
+
+  /// 是否正在下载核心
+  bool get isDownloading => coreController.isDownloading;
+
+  /// 核心下载进度
+  double get downloadProgress => coreController.downloadProgress;
+
+  /// 是否正在下载 WebUI
+  bool get isDownloadingWebUi => webUiController.isDownloading;
+
+  /// WebUI 下载进度
+  double get webUiDownloadProgress => webUiController.downloadProgress;
 
   /// 清空日志
-  void clearLogs() => _coreRunner.clearLogs();
+  void clearLogs() => coreController.clearLogs();
 
   /// 设置端口冲突回调
   set onPortConflict(void Function(PortConflict conflict)? callback) {
-    _coreRunner.onPortConflict = callback;
+    coreController.onPortConflict = callback;
   }
 
-  /// 查询占用端口的进程信息
-  Future<String> getProcessOnPort(String port) async {
-    return _coreRunner.getProcessOnPort(port);
+  /// 构造函数
+  HomeController({
+    CoreController? coreController,
+    WebUiController? webUiController,
+  }) : coreController = coreController ?? CoreController(),
+       webUiController = webUiController ?? WebUiController() {
+    this.coreController.addListener(_onChildChanged);
+    this.webUiController.addListener(_onChildChanged);
   }
 
-  /// 强制释放端口并重试启动
-  Future<void> killPortAndRetry(String port) async {
-    await _coreRunner.killProcessOnPort(port);
-    await _coreRunner.retryStart();
-  }
-
-  HomeController() {
-    _coreRunner.addListener(_onCoreStatusChanged);
-  }
-
+  /// 初始化
   Future<void> init() async {
-    final platform = PlatformInterface.instance;
-    corePath = await platform.getCorePath();
+    await coreController.init();
+    await webUiController.init();
 
-    configPath = await _profileRepository.getSelectedConfigPath();
-    if (configPath == null) {
-      final configDir = await platform.getConfigDirectory();
-      configPath = '$configDir/config.yaml';
-      await Directory(configDir).create(recursive: true);
-    }
-
-    if (await File(corePath!).exists()) {
-      coreVersion = await _coreRepository.getCoreVersion(corePath!);
-    }
-    if (!_disposed) notifyListeners();
-
-    // 首次启动自动下载 WebUI (Zashboard)
+    // 首次启动自动下载 WebUI
     _ensureWebUiInstalled();
   }
 
-  /// 确保 WebUI 已安装，未安装时自动下载
-  Future<void> _ensureWebUiInstalled() async {
-    try {
-      final installed = await _webUiRepository.isInstalled();
-      if (!installed) {
-        isDownloadingWebUi = true;
-        webUiDownloadProgress = 0;
-        if (!_disposed) notifyListeners();
-
-        await _webUiRepository.downloadWithFallback(
-          onProgress: (received, total) {
-            if (_disposed) return;
-            webUiDownloadProgress = received / total;
-            notifyListeners();
-          },
-        );
-      }
-    } catch (e) {
-      // 下载失败不影响正常使用，静默处理
-      debugPrint('WebUI 自动下载失败: $e');
-    } finally {
-      isDownloadingWebUi = false;
-      if (!_disposed) notifyListeners();
-    }
-  }
-
-  void _onCoreStatusChanged() {
+  void _onChildChanged() {
     if (_disposed) return;
     notifyListeners();
   }
 
-  Future<void> downloadCore() async {
-    isDownloading = true;
-    downloadProgress = 0;
-    notifyListeners();
-
+  /// 确保 WebUI 已安装
+  Future<void> _ensureWebUiInstalled() async {
     try {
-      final version = await _coreRepository.getLatestVersion();
-      await _coreRepository.downloadCore(version, corePath!, (received, total) {
-        if (_disposed) return;
-        downloadProgress = received / total;
-        notifyListeners();
-      });
-      coreVersion = version.tagName;
-    } finally {
-      isDownloading = false;
-      if (!_disposed) notifyListeners();
+      await webUiController.ensureInstalled();
+    } catch (e) {
+      debugPrint('WebUI 自动下载失败: $e');
     }
   }
 
-  Future<void> toggleCore() async {
-    if (_coreRunner.status == CoreStatus.running) {
-      await _coreRunner.stop();
-    } else {
-      if (corePath == null || !await File(corePath!).exists()) {
-        throw Exception('请先下载核心');
-      }
-      if (configPath == null || !await File(configPath!).exists()) {
-        throw Exception('请先添加配置文件');
-      }
-      // 生成运行时配置，强制注入必要的配置项
-      final runtimeConfigPath = await _profileRepository
-          .generateRuntimeConfig();
-      if (runtimeConfigPath == null) {
-        throw Exception('生成运行时配置失败');
-      }
-      await _coreRunner.start(corePath!, runtimeConfigPath);
-    }
-  }
+  /// 查询占用端口的进程信息
+  Future<String> getProcessOnPort(String port) =>
+      coreController.getProcessOnPort(port);
+
+  /// 强制释放端口并重试启动
+  Future<void> killPortAndRetry(String port) =>
+      coreController.killPortAndRetry(port);
+
+  /// 下载核心
+  Future<void> downloadCore({bool includePrerelease = false}) =>
+      coreController.downloadCore(includePrerelease: includePrerelease);
+
+  /// 切换核心运行状态
+  Future<void> toggleCore() => coreController.toggleCore();
+
+  /// 刷新配置路径
+  Future<void> refreshConfigPath() => coreController.refreshConfigPath();
 
   @override
   void dispose() {
     _disposed = true;
-    _coreRunner.removeListener(_onCoreStatusChanged);
+    coreController.removeListener(_onChildChanged);
+    webUiController.removeListener(_onChildChanged);
+    coreController.dispose();
+    webUiController.dispose();
     super.dispose();
   }
 }

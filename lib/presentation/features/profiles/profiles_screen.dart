@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../data/models/config_profile.dart';
+import '../../../l10n/l10n_extensions.dart';
 import '../../../logic/profile_controller.dart';
 
 class ProfilesScreen extends StatefulWidget {
@@ -33,28 +34,28 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('从 URL 添加'),
+        title: Text(context.l10n.profileAddFromUrl),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameCtrl,
-              decoration: const InputDecoration(labelText: '名称'),
+              decoration: InputDecoration(labelText: context.l10n.profileName),
             ),
             TextField(
               controller: urlCtrl,
-              decoration: const InputDecoration(labelText: 'URL'),
+              decoration: InputDecoration(labelText: context.l10n.profileUrl),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
+            child: Text(context.l10n.actionCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('添加'),
+            child: Text(context.l10n.actionAdd),
           ),
         ],
       ),
@@ -65,8 +66,9 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
         await _controller.addFromUrl(nameCtrl.text, urlCtrl.text);
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text('添加失败: $e')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.errorAddFailed(e.toString()))),
+          );
         }
       }
     }
@@ -86,8 +88,9 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
       await _controller.addFromFile(name, file.path!);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('导入失败: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.errorImportFailed(e.toString()))),
+        );
       }
     }
   }
@@ -96,16 +99,16 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('确认删除'),
-        content: Text('删除配置 "${profile.name}"？'),
+        title: Text(context.l10n.profileDeleteConfirmTitle),
+        content: Text(context.l10n.profileDeleteConfirmMessage(profile.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
+            child: Text(context.l10n.actionCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('删除'),
+            child: Text(context.l10n.actionDelete),
           ),
         ],
       ),
@@ -117,13 +120,15 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
     try {
       await _controller.updateSubscription(profile.id);
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('更新成功')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.successUpdated)));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('更新失败: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.errorUpdateFailed(e.toString()))),
+        );
       }
     }
   }
@@ -132,13 +137,15 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
     try {
       await _controller.updateAll();
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('全部更新完成')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.successAllUpdateComplete)),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('更新失败: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.errorUpdateFailed(e.toString()))),
+        );
       }
     }
   }
@@ -157,7 +164,7 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('配置'),
+        title: Text(context.l10n.profilesTitle),
         actions: [
           if (_controller.updating)
             const Padding(
@@ -172,12 +179,12 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
             IconButton(
               icon: const Icon(Icons.sync),
               onPressed: _updateAll,
-              tooltip: '更新全部订阅',
+              tooltip: context.l10n.profilesUpdateAll,
             ),
         ],
       ),
       body: _controller.profiles.isEmpty
-          ? const Center(child: Text('暂无配置'))
+          ? Center(child: Text(context.l10n.profilesEmpty))
           : ListView.builder(
               itemCount: _controller.profiles.length,
               itemBuilder: (ctx, i) {
@@ -189,14 +196,27 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
                     color: selected ? Colors.green : null,
                   ),
                   title: Text(p.name),
-                  subtitle: Text(p.isSubscription ? '订阅' : '本地'),
+                  subtitle: Text(
+                    p.isSubscription
+                        ? context.l10n.profileTypeSubscription
+                        : context.l10n.profileTypeLocal,
+                  ),
                   onTap: () => _controller.select(p.id),
                   trailing: PopupMenuButton(
                     itemBuilder: (_) => [
-                      const PopupMenuItem(value: 'edit', child: Text('编辑')),
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Text(context.l10n.actionEdit),
+                      ),
                       if (p.isSubscription)
-                        const PopupMenuItem(value: 'update', child: Text('更新')),
-                      const PopupMenuItem(value: 'delete', child: Text('删除')),
+                        PopupMenuItem(
+                          value: 'update',
+                          child: Text(context.l10n.actionUpdate),
+                        ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Text(context.l10n.actionDelete),
+                      ),
                     ],
                     onSelected: (v) {
                       if (v == 'edit') _edit(p);
@@ -215,7 +235,7 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.link),
-                title: const Text('从 URL 添加'),
+                title: Text(context.l10n.profileAddFromUrl),
                 onTap: () {
                   Navigator.pop(context);
                   _addFromUrl();
@@ -223,7 +243,7 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.folder),
-                title: const Text('从文件导入'),
+                title: Text(context.l10n.profileAddFromFile),
                 onTap: () {
                   Navigator.pop(context);
                   _addFromFile();

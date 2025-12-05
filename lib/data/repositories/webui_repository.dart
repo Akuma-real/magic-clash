@@ -16,8 +16,18 @@ class WebUiRepository {
   static const _downloadUrlBase =
       'https://github.com/$kZashboardRepo/releases/download';
 
-  final Dio _dio = Dio();
-  final _prefs = PreferencesService();
+  final Dio _dio;
+  final PreferencesService _prefs;
+  final PlatformInterface _platform;
+
+  /// 构造函数注入依赖
+  WebUiRepository({
+    required Dio dio,
+    required PreferencesService preferencesService,
+    required PlatformInterface platformInterface,
+  }) : _dio = dio,
+       _prefs = preferencesService,
+       _platform = platformInterface;
 
   /// 检查 WebUI 是否已安装（必须是 Zashboard）
   Future<bool> isInstalled() async {
@@ -120,7 +130,7 @@ class WebUiRepository {
 
   /// 获取 WebUI 目录路径
   Future<String> _getUiDirectory() async {
-    final configDir = await PlatformInterface.instance.getConfigDirectory();
+    final configDir = await _platform.getConfigDirectory();
     return '$configDir/$kWebUiPath';
   }
 
