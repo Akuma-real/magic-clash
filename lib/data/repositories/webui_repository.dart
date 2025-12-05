@@ -19,11 +19,26 @@ class WebUiRepository {
   final Dio _dio = Dio();
   final _prefs = PreferencesService();
 
-  /// 检查 WebUI 是否已安装
+  /// 检查 WebUI 是否已安装（必须是 Zashboard）
   Future<bool> isInstalled() async {
     final uiDir = await _getUiDirectory();
     final indexFile = File('$uiDir/index.html');
-    return indexFile.existsSync();
+    final manifestFile = File('$uiDir/manifest.webmanifest');
+
+    if (!indexFile.existsSync()) return false;
+
+    // 检查是否是 Zashboard（避免 mihomo 自动下载的 MetaCubeXD）
+    if (manifestFile.existsSync()) {
+      try {
+        final content = await manifestFile.readAsString();
+        // 如果是 MetaCubeXD，返回 false 强制重新下载 Zashboard
+        if (content.contains('MetaCubeXD') || content.contains('metacubexd')) {
+          return false;
+        }
+      } catch (_) {}
+    }
+
+    return true;
   }
 
   /// 获取本地已安装的版本
@@ -110,6 +125,7 @@ class WebUiRepository {
   }
 
   /// 解压 ZIP 文件到目标目录
+  /// Zashboard 的 dist.zip 内有 dist/ 子目录，需要去掉这一层
   Future<void> _extractZip(String zipPath, String outputDir) async {
     final bytes = await File(zipPath).readAsBytes();
     final archive = ZipDecoder().decodeBytes(bytes);
@@ -117,13 +133,47 @@ class WebUiRepository {
     // 确保目标目录存在，先清空旧文件
     final dir = Directory(outputDir);
     if (await dir.exists()) {
-      await dir.delete(recursive: true);
+      try {
+        await dir.delete(recursive: true);
+      } catch (e) {
+        // 可能是 root 权限的文件（mihomo 自动下载的），尝试用 pkexec 删除
+        if (Platform.isLinux || Platform.isMacOS) {
+          await Process.run('pkexec', ['rm', '-rf', outputDir]);
+        }
+      }
     }
     await dir.create(recursive: true);
 
-    // 解压文件
+    // 检测是否有公共前缀目录（如 dist/）
+    String? commonPrefix;
     for (final file in archive) {
-      final filename = file.name;
+      final parts = file.name.split('/');
+      if (parts.length > 1) {
+        final prefix = '${parts[0]}/';
+        if (commonPrefix == null) {
+          commonPrefix = prefix;
+        } else if (commonPrefix != prefix) {
+          commonPrefix = null;
+          break;
+        }
+      } else {
+        commonPrefix = null;
+        break;
+      }
+    }
+
+    // 解压文件，去掉公共前缀
+    for (final file in archive) {
+      var filename = file.name;
+
+      // 去掉公共前缀
+      if (commonPrefix != null && filename.startsWith(commonPrefix)) {
+        filename = filename.substring(commonPrefix.length);
+      }
+
+      // 跳过空路径
+      if (filename.isEmpty) continue;
+
       if (file.isFile) {
         final data = file.content as List<int>;
         final outFile = File('$outputDir/$filename');

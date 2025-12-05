@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
+import '../data/models/log_entry.dart';
 import '../data/repositories/core_status_repository.dart';
 import '../data/repositories/profile_repository.dart';
 import '../data/repositories/webui_repository.dart';
@@ -25,6 +26,28 @@ class HomeController extends ChangeNotifier {
   double webUiDownloadProgress = 0;
 
   CoreStatus get status => _coreRunner.status;
+
+  /// 获取进程日志列表
+  List<LogEntry> get logs => _coreRunner.logs;
+
+  /// 清空日志
+  void clearLogs() => _coreRunner.clearLogs();
+
+  /// 设置端口冲突回调
+  set onPortConflict(void Function(PortConflict conflict)? callback) {
+    _coreRunner.onPortConflict = callback;
+  }
+
+  /// 查询占用端口的进程信息
+  Future<String> getProcessOnPort(String port) async {
+    return _coreRunner.getProcessOnPort(port);
+  }
+
+  /// 强制释放端口并重试启动
+  Future<void> killPortAndRetry(String port) async {
+    await _coreRunner.killProcessOnPort(port);
+    await _coreRunner.retryStart();
+  }
 
   HomeController() {
     _coreRunner.addListener(_onCoreStatusChanged);

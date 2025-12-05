@@ -66,19 +66,33 @@ class ProfileRepository {
     final result = <String>[];
 
     // 需要强制设置的配置项
+    // 注意：不设置 external-ui，因为 root 权限运行时路径不允许
+    // WebUI 通过浏览器访问外部服务或使用内置 UI
     final overrides = {
-      'external-controller': '$kApiHost:$kApiPort',
-      'external-ui': kWebUiPath,
+      'external-controller': '0.0.0.0:$kApiPort',
       'secret': secret,
-      'log-level': 'debug',
+      'log-level': 'info',
     };
+
+    // 需要移除的配置项（避免路径问题）
+    final removeKeys = {'external-ui', 'external-ui-url'};
 
     final foundKeys = <String>{};
 
     for (final line in lines) {
       final trimmed = line.trim();
-      bool replaced = false;
 
+      // 跳过需要移除的配置项
+      bool shouldRemove = false;
+      for (final key in removeKeys) {
+        if (trimmed.startsWith('$key:')) {
+          shouldRemove = true;
+          break;
+        }
+      }
+      if (shouldRemove) continue;
+
+      bool replaced = false;
       for (final key in overrides.keys) {
         if (trimmed.startsWith('$key:')) {
           result.add('$key: ${overrides[key]}');
