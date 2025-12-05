@@ -10,21 +10,11 @@ class MainShell extends StatelessWidget {
 
   static const _destinations = [
     NavigationDestination(icon: Icon(Icons.home), label: '主页'),
-    NavigationDestination(icon: Icon(Icons.dns), label: '代理'),
-    NavigationDestination(icon: Icon(Icons.link), label: '连接'),
-    NavigationDestination(icon: Icon(Icons.article), label: '日志'),
     NavigationDestination(icon: Icon(Icons.folder), label: '配置'),
     NavigationDestination(icon: Icon(Icons.settings), label: '设置'),
   ];
 
-  static const _routes = [
-    '/',
-    '/proxies',
-    '/connections',
-    '/logs',
-    '/profiles',
-    '/settings'
-  ];
+  static const _routes = ['/', '/profiles', '/settings'];
 
   int _getSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
@@ -51,10 +41,12 @@ class MainShell extends StatelessWidget {
               onDestinationSelected: (i) => _onDestinationSelected(context, i),
               labelType: NavigationRailLabelType.all,
               destinations: _destinations
-                  .map((d) => NavigationRailDestination(
-                        icon: d.icon,
-                        label: Text(d.label),
-                      ))
+                  .map(
+                    (d) => NavigationRailDestination(
+                      icon: d.icon,
+                      label: Text(d.label),
+                    ),
+                  )
                   .toList(),
             ),
             const VerticalDivider(thickness: 1, width: 1),

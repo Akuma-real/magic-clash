@@ -194,8 +194,19 @@ class SubscriptionParser {
     if (payload.contains('@')) {
       final beforeAt = payload.split('@')[0];
       final afterAt = payload.split('@')[1];
-      final method = beforeAt.split(':')[0];
-      final password = beforeAt.split(':').sublist(1).join(':');
+      // Try base64 decode the method:password part (add padding if needed)
+      String method, password;
+      try {
+        var b64 = beforeAt;
+        final pad = b64.length % 4;
+        if (pad > 0) b64 += '=' * (4 - pad);
+        final decoded = utf8.decode(base64.decode(b64));
+        method = decoded.split(':')[0];
+        password = decoded.split(':').sublist(1).join(':');
+      } catch (_) {
+        method = beforeAt.split(':')[0];
+        password = beforeAt.split(':').sublist(1).join(':');
+      }
       final host = afterAt.split(':')[0];
       final port = afterAt.split(':')[1];
       return '''- name: "${escapeName(name.isNotEmpty ? name : "$host:$port")}"

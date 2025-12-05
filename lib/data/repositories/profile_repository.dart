@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/constants.dart';
 import '../../utils/parsers/subscription_parser.dart';
 import '../models/config_profile.dart';
 import '../services/local_storage/preferences_service.dart';
@@ -39,6 +40,65 @@ class ProfileRepository {
     if (profile == null) return null;
     final configDir = await PlatformInterface.instance.getConfigDirectory();
     return '$configDir/${profile.fileName}';
+  }
+
+  /// 生成运行时配置文件，强制覆盖 external-controller 等必要配置
+  Future<String?> generateRuntimeConfig() async {
+    final configPath = await getSelectedConfigPath();
+    if (configPath == null) return null;
+
+    final configDir = await PlatformInterface.instance.getConfigDirectory();
+    final runtimePath = '$configDir/runtime_config.yaml';
+
+    final content = await File(configPath).readAsString();
+    final modifiedContent = _injectRequiredSettings(content);
+    await File(runtimePath).writeAsString(modifiedContent);
+
+    return runtimePath;
+  }
+
+  /// 注入必要的配置项，强制覆盖已有设置
+  String _injectRequiredSettings(String content) {
+    final lines = content.split('\n');
+    final result = <String>[];
+
+    // 需要强制设置的配置项
+    final overrides = {
+      'external-controller': '$kApiHost:$kApiPort',
+      'external-ui': 'ui',
+      'log-level': 'debug',
+    };
+
+    final foundKeys = <String>{};
+
+    for (final line in lines) {
+      final trimmed = line.trim();
+      bool replaced = false;
+
+      for (final key in overrides.keys) {
+        if (trimmed.startsWith('$key:')) {
+          result.add('$key: ${overrides[key]}');
+          foundKeys.add(key);
+          replaced = true;
+          break;
+        }
+      }
+
+      if (!replaced) {
+        result.add(line);
+      }
+    }
+
+    // 添加未找到的配置项到文件开头（在第一行之后）
+    final missingKeys = overrides.keys.where((k) => !foundKeys.contains(k));
+    if (missingKeys.isNotEmpty) {
+      final insertIndex = result.isNotEmpty ? 1 : 0;
+      for (final key in missingKeys) {
+        result.insert(insertIndex, '$key: ${overrides[key]}');
+      }
+    }
+
+    return result.join('\n');
   }
 
   Future<ConfigProfile> addFromUrl(String name, String url) async {

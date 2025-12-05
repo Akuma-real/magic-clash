@@ -1,13 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart';
 
-import '../core/constants.dart';
 import '../data/repositories/core_status_repository.dart';
 import '../data/repositories/profile_repository.dart';
-import '../data/services/api/mihomo_api_service.dart';
 import '../data/services/native/platform_interface.dart';
 import 'core_runner.dart';
 
@@ -15,14 +12,7 @@ class HomeController extends ChangeNotifier {
   final _coreRunner = CoreRunner();
   final _coreRepository = CoreStatusRepository();
   final _profileRepository = ProfileRepository();
-  MihomoApiService? _apiService;
-  StreamSubscription? _trafficSub;
-
-  final List<FlSpot> uploadData = [];
-  final List<FlSpot> downloadData = [];
-  int _dataIndex = 0;
-  int totalUpload = 0;
-  int totalDownload = 0;
+  bool _disposed = false;
 
   String? corePath;
   String? configPath;
@@ -50,41 +40,12 @@ class HomeController extends ChangeNotifier {
     if (await File(corePath!).exists()) {
       coreVersion = await _coreRepository.getCoreVersion(corePath!);
     }
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   void _onCoreStatusChanged() {
+    if (_disposed) return;
     notifyListeners();
-    if (_coreRunner.status == CoreStatus.running) {
-      _startTrafficMonitor();
-    } else {
-      _stopTrafficMonitor();
-    }
-  }
-
-  void _startTrafficMonitor() {
-    _apiService = MihomoApiService();
-    _trafficSub = _apiService!.trafficStream().listen(
-      (traffic) {
-        totalUpload += traffic.up;
-        totalDownload += traffic.down;
-        uploadData.add(FlSpot(_dataIndex.toDouble(), traffic.up / 1024));
-        downloadData.add(FlSpot(_dataIndex.toDouble(), traffic.down / 1024));
-        _dataIndex++;
-        if (uploadData.length > kTrafficDataPoints) {
-          uploadData.removeAt(0);
-          downloadData.removeAt(0);
-        }
-        notifyListeners();
-      },
-      onError: (_) {},
-    );
-  }
-
-  void _stopTrafficMonitor() {
-    _trafficSub?.cancel();
-    _trafficSub = null;
-    _apiService = null;
   }
 
   Future<void> downloadCore() async {
@@ -94,18 +55,15 @@ class HomeController extends ChangeNotifier {
 
     try {
       final version = await _coreRepository.getLatestVersion();
-      await _coreRepository.downloadCore(
-        version,
-        corePath!,
-        (received, total) {
-          downloadProgress = received / total;
-          notifyListeners();
-        },
-      );
+      await _coreRepository.downloadCore(version, corePath!, (received, total) {
+        if (_disposed) return;
+        downloadProgress = received / total;
+        notifyListeners();
+      });
       coreVersion = version.tagName;
     } finally {
       isDownloading = false;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
   }
 
@@ -119,14 +77,20 @@ class HomeController extends ChangeNotifier {
       if (configPath == null || !await File(configPath!).exists()) {
         throw Exception('请先添加配置文件');
       }
-      await _coreRunner.start(corePath!, configPath!);
+      // 生成运行时配置，强制注入必要的配置项
+      final runtimeConfigPath = await _profileRepository
+          .generateRuntimeConfig();
+      if (runtimeConfigPath == null) {
+        throw Exception('生成运行时配置失败');
+      }
+      await _coreRunner.start(corePath!, runtimeConfigPath);
     }
   }
 
   @override
   void dispose() {
+    _disposed = true;
     _coreRunner.removeListener(_onCoreStatusChanged);
-    _trafficSub?.cancel();
     super.dispose();
   }
 }
