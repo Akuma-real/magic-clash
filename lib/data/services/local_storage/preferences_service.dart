@@ -2,10 +2,17 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// 更新通道枚举
+enum UpdateChannel {
+  stable, // 正式版
+  alpha, // Alpha 预发布版
+}
+
 class PreferencesService {
   static const _profilesKey = 'config_profiles';
   static const _selectedKey = 'selected_config_id';
   static const _themeModeKey = 'themeMode';
+  static const _updateChannelKey = 'updateChannel';
 
   Future<String?> getString(String key) async {
     final prefs = await SharedPreferences.getInstance();
@@ -43,4 +50,17 @@ class PreferencesService {
 
   Future<void> setThemeMode(String mode) async =>
       setString(_themeModeKey, mode);
+
+  /// 获取更新通道
+  Future<UpdateChannel> getUpdateChannel() async {
+    final value = await getString(_updateChannelKey);
+    return UpdateChannel.values.firstWhere(
+      (c) => c.name == value,
+      orElse: () => UpdateChannel.stable,
+    );
+  }
+
+  /// 设置更新通道
+  Future<void> setUpdateChannel(UpdateChannel channel) async =>
+      setString(_updateChannelKey, channel.name);
 }

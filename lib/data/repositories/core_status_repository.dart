@@ -6,14 +6,57 @@ import 'package:dio/dio.dart';
 import '../models/core_version.dart';
 
 class CoreStatusRepository {
-  static const _releaseApi =
+  /// 获取所有 releases 的 API
+  static const _releasesApi =
+      'https://api.github.com/repos/MetaCubeX/mihomo/releases';
+
+  /// 获取最新正式版的 API
+  static const _latestReleaseApi =
       'https://api.github.com/repos/MetaCubeX/mihomo/releases/latest';
+
+  /// version.txt 下载地址模板
+  static const _versionUrlBase =
+      'https://github.com/MetaCubeX/mihomo/releases/download';
 
   final Dio _dio = Dio();
 
-  Future<CoreVersion> getLatestVersion() async {
-    final response = await _dio.get(_releaseApi);
-    return CoreVersion.fromJson(response.data);
+  /// 获取最新版本
+  /// [includePrerelease] 为 true 时返回最新的 alpha/预发布版本
+  Future<CoreVersion> getLatestVersion({bool includePrerelease = false}) async {
+    final CoreVersion coreVersion;
+
+    if (!includePrerelease) {
+      // 获取最新正式版
+      final response = await _dio.get(_latestReleaseApi);
+      coreVersion = CoreVersion.fromJson(response.data);
+    } else {
+      // 获取所有 releases，找到最新的（包括预发布版）
+      final response = await _dio.get(
+        _releasesApi,
+        queryParameters: {'per_page': 10},
+      );
+      final releases = response.data as List;
+      if (releases.isEmpty) {
+        throw Exception('No releases found');
+      }
+      coreVersion = CoreVersion.fromJson(releases.first);
+    }
+
+    // 从 version.txt 获取真实版本号
+    try {
+      final versionUrl = '$_versionUrlBase/${coreVersion.tagName}/version.txt';
+      final versionResponse = await _dio.get(versionUrl);
+      final realVersion = versionResponse.data.toString().trim();
+      // 返回带有真实版本号的 CoreVersion
+      return CoreVersion(
+        tagName: realVersion,
+        name: coreVersion.name,
+        assets: coreVersion.assets,
+      );
+    } catch (_) {
+      // 如果获取失败，返回原始版本
+      return coreVersion;
+    }
   }
 
   Future<void> downloadCore(
@@ -96,7 +139,10 @@ class CoreStatusRepository {
     try {
       final result = await Process.run(corePath, ['-v']);
       final output = result.stdout.toString();
-      final match = RegExp(r'v[\d.]+').firstMatch(output);
+      // 匹配版本号：支持 "v1.19.17" 或 "alpha-f44aa22" 格式
+      // 示例输出: "Mihomo Meta alpha-f44aa22 linux amd64 ..."
+      //          "Mihomo Meta v1.19.17 linux amd64 ..."
+      final match = RegExp(r'(v[\d.]+|alpha-[a-f0-9]+)').firstMatch(output);
       return match?.group(0);
     } catch (_) {
       return null;

@@ -19,6 +19,9 @@ dependencies:
   archive: ^3.4.0
   file_picker: ^8.0.0
   uuid: ^4.0.0
+  local_notifier: ^0.1.6
+  package_info_plus: ^8.0.0
+  url_launcher: ^6.2.0
 
 dev_dependencies:
   flutter_test:
