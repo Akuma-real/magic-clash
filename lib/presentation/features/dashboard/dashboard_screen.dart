@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../data/repositories/webui_repository.dart';
 import '../../../logic/core_runner.dart';
 import '../../../logic/home_controller.dart';
 
@@ -12,6 +14,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final _controller = HomeController();
+  final _webUiRepository = WebUiRepository();
 
   @override
   void initState() {
@@ -44,6 +47,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('$e')));
+      }
+    }
+  }
+
+  Future<void> _openWebUI() async {
+    final url = await _webUiRepository.getWebUiUrlWithAuth();
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('无法打开浏览器')));
       }
     }
   }
@@ -97,6 +114,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
+                      if (isRunning)
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _openWebUI,
+                            icon: const Icon(Icons.web),
+                            label: const Text('WebUI'),
+                          ),
+                        ),
                       if (_controller.coreVersion == null &&
                           !_controller.isDownloading)
                         Expanded(

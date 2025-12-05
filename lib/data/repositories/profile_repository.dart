@@ -50,22 +50,26 @@ class ProfileRepository {
     final configDir = await PlatformInterface.instance.getConfigDirectory();
     final runtimePath = '$configDir/runtime_config.yaml';
 
+    // 获取用户设置的 secret
+    final secret = await _prefs.getSecret();
+
     final content = await File(configPath).readAsString();
-    final modifiedContent = _injectRequiredSettings(content);
+    final modifiedContent = _injectRequiredSettings(content, secret);
     await File(runtimePath).writeAsString(modifiedContent);
 
     return runtimePath;
   }
 
   /// 注入必要的配置项，强制覆盖已有设置
-  String _injectRequiredSettings(String content) {
+  String _injectRequiredSettings(String content, String secret) {
     final lines = content.split('\n');
     final result = <String>[];
 
     // 需要强制设置的配置项
     final overrides = {
       'external-controller': '$kApiHost:$kApiPort',
-      'external-ui': 'ui',
+      'external-ui': kWebUiPath,
+      'secret': secret,
       'log-level': 'debug',
     };
 

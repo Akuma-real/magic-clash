@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/constants.dart';
 import '../../../data/repositories/core_status_repository.dart';
+import '../../../data/repositories/webui_repository.dart';
 import '../../../data/services/local_storage/preferences_service.dart';
 import '../../../data/services/native/platform_interface.dart';
 import '../../../data/services/notification/notification_service.dart';
@@ -16,8 +18,10 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final _coreRepository = CoreStatusRepository();
+  final _webUiRepository = WebUiRepository();
   final _prefs = PreferencesService();
   final _notificationService = NotificationService();
+  final _secretController = TextEditingController();
   String? _currentVersion;
   String? _latestVersion;
   bool _checkingUpdate = false;
@@ -25,6 +29,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   double _downloadProgress = 0;
   ThemeMode _themeMode = ThemeMode.system;
   UpdateChannel _updateChannel = UpdateChannel.stable;
+  String? _webUiVersion;
+  bool _downloadingWebUi = false;
+  double _webUiDownloadProgress = 0;
 
   @override
   void initState() {
@@ -36,12 +43,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadSettings() async {
     final mode = await _prefs.getThemeMode();
     final channel = await _prefs.getUpdateChannel();
+    final secret = await _prefs.getSecret();
+    final webUiVersion = await _prefs.getWebUiVersion();
     setState(() {
       _themeMode = ThemeMode.values.firstWhere(
         (m) => m.name == mode,
         orElse: () => ThemeMode.system,
       );
       _updateChannel = channel;
+      _secretController.text = secret;
+      _webUiVersion = webUiVersion;
     });
   }
 
@@ -136,6 +147,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
+  Future<void> _saveSecret() async {
+    await _prefs.setSecret(_secretController.text);
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Secret 已保存')));
+    }
+  }
+
+  Future<void> _downloadWebUi() async {
+    setState(() {
+      _downloadingWebUi = true;
+      _webUiDownloadProgress = 0;
+    });
+    try {
+      await _webUiRepository.downloadWithFallback(
+        onProgress: (received, total) {
+          setState(() => _webUiDownloadProgress = received / total);
+        },
+      );
+      _webUiVersion = await _prefs.getWebUiVersion();
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('WebUI 下载完成')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('WebUI 下载失败: $e')));
+      }
+    }
+    setState(() => _downloadingWebUi = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -211,6 +258,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (mode != null) _setThemeMode(mode);
               },
             ),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.key),
+            title: const Text('API Secret'),
+            subtitle: Text('默认值: $kDefaultSecret'),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _secretController,
+                    decoration: const InputDecoration(
+                      hintText: '输入 API Secret',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    obscureText: true,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(onPressed: _saveSecret, child: const Text('保存')),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.web),
+            title: const Text('WebUI (Zashboard)'),
+            subtitle: Text(_webUiVersion ?? '未安装'),
+            trailing: _downloadingWebUi
+                ? SizedBox(
+                    width: 100,
+                    child: LinearProgressIndicator(
+                      value: _webUiDownloadProgress,
+                    ),
+                  )
+                : TextButton(
+                    onPressed: _downloadWebUi,
+                    child: Text(_webUiVersion == null ? '下载' : '更新'),
+                  ),
           ),
           const Divider(),
           const ListTile(

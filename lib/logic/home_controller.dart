@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../data/repositories/core_status_repository.dart';
 import '../data/repositories/profile_repository.dart';
+import '../data/repositories/webui_repository.dart';
 import '../data/services/native/platform_interface.dart';
 import 'core_runner.dart';
 
@@ -12,6 +13,7 @@ class HomeController extends ChangeNotifier {
   final _coreRunner = CoreRunner();
   final _coreRepository = CoreStatusRepository();
   final _profileRepository = ProfileRepository();
+  final _webUiRepository = WebUiRepository();
   bool _disposed = false;
 
   String? corePath;
@@ -19,6 +21,8 @@ class HomeController extends ChangeNotifier {
   String? coreVersion;
   bool isDownloading = false;
   double downloadProgress = 0;
+  bool isDownloadingWebUi = false;
+  double webUiDownloadProgress = 0;
 
   CoreStatus get status => _coreRunner.status;
 
@@ -41,6 +45,35 @@ class HomeController extends ChangeNotifier {
       coreVersion = await _coreRepository.getCoreVersion(corePath!);
     }
     if (!_disposed) notifyListeners();
+
+    // 首次启动自动下载 WebUI (Zashboard)
+    _ensureWebUiInstalled();
+  }
+
+  /// 确保 WebUI 已安装，未安装时自动下载
+  Future<void> _ensureWebUiInstalled() async {
+    try {
+      final installed = await _webUiRepository.isInstalled();
+      if (!installed) {
+        isDownloadingWebUi = true;
+        webUiDownloadProgress = 0;
+        if (!_disposed) notifyListeners();
+
+        await _webUiRepository.downloadWithFallback(
+          onProgress: (received, total) {
+            if (_disposed) return;
+            webUiDownloadProgress = received / total;
+            notifyListeners();
+          },
+        );
+      }
+    } catch (e) {
+      // 下载失败不影响正常使用，静默处理
+      debugPrint('WebUI 自动下载失败: $e');
+    } finally {
+      isDownloadingWebUi = false;
+      if (!_disposed) notifyListeners();
+    }
   }
 
   void _onCoreStatusChanged() {

@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/constants.dart';
+
 /// 更新通道枚举
 enum UpdateChannel {
   stable, // 正式版
@@ -13,6 +15,8 @@ class PreferencesService {
   static const _selectedKey = 'selected_config_id';
   static const _themeModeKey = 'themeMode';
   static const _updateChannelKey = 'updateChannel';
+  static const _secretKey = 'api_secret';
+  static const _webUiVersionKey = 'webui_version';
 
   Future<String?> getString(String key) async {
     final prefs = await SharedPreferences.getInstance();
@@ -63,4 +67,18 @@ class PreferencesService {
   /// 设置更新通道
   Future<void> setUpdateChannel(UpdateChannel channel) async =>
       setString(_updateChannelKey, channel.name);
+
+  /// 获取 API Secret
+  Future<String> getSecret() async =>
+      await getString(_secretKey) ?? kDefaultSecret;
+
+  /// 设置 API Secret
+  Future<void> setSecret(String secret) async => setString(_secretKey, secret);
+
+  /// 获取 WebUI 版本
+  Future<String?> getWebUiVersion() async => getString(_webUiVersionKey);
+
+  /// 设置 WebUI 版本
+  Future<void> setWebUiVersion(String version) async =>
+      setString(_webUiVersionKey, version);
 }
